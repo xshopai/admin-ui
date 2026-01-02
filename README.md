@@ -1,6 +1,6 @@
-# AIOutlet Admin UI
+# xShop.ai Admin UI
 
-A modern React + TypeScript admin dashboard for managing the AIOutlet e-commerce platform. Built with the same design system and theme as the customer-ui for consistent user experience.
+A modern React + TypeScript admin dashboard for managing the xShop.ai e-commerce platform. Built with the same design system and theme as the customer-ui for consistent user experience.
 
 ## Features
 
@@ -120,5 +120,5 @@ For testing purposes, use any of these admin accounts:
 
 ## License
 
-This project is part of the AIOutlet platform.
-AIOutlet Web UI for admin users
+This project is part of the xShop.ai platform.
+xShop.ai Web UI for admin users

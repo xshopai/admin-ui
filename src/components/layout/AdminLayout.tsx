@@ -154,7 +154,7 @@ const AdminLayout: React.FC = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">AO</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">AIOutlet Admin</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">xShop.ai Admin</h1>
             </div>
           </div>
 
