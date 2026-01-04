@@ -17,7 +17,7 @@ test.describe('Product Management E2E', () => {
   test.beforeEach(async ({ page }) => {
     // Login as admin before each test
     await page.goto(`${BASE_URL}/login`);
-    await page.fill('input[name="email"]', 'admin@aioutlet.com');
+    await page.fill('input[name="email"]', 'admin@xshopai.com');
     await page.fill('input[name="password"]', 'admin123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/dashboard|\/admin/, { timeout: 10000 });

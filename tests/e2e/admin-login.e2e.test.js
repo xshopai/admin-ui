@@ -23,7 +23,7 @@ test.describe('Admin Login E2E', () => {
     await page.goto(`${BASE_URL}/login`);
 
     // Fill in admin credentials
-    await page.fill('[data-testid="email-input"], input[name="email"]', 'admin@aioutlet.com');
+    await page.fill('[data-testid="email-input"], input[name="email"]', 'admin@xshopai.com');
     await page.fill('[data-testid="password-input"], input[name="password"]', 'admin123');
 
     // Click login button
@@ -85,7 +85,7 @@ test.describe('Admin Login E2E', () => {
 
     // Login first
     await page.goto(`${BASE_URL}/login`);
-    await page.fill('input[name="email"]', 'admin@aioutlet.com');
+    await page.fill('input[name="email"]', 'admin@xshopai.com');
     await page.fill('input[name="password"]', 'admin123');
     await page.click('button[type="submit"]');
 
@@ -114,7 +114,7 @@ test.describe('Admin Login E2E', () => {
 
     // Login
     await page.goto(`${BASE_URL}/login`);
-    await page.fill('input[name="email"]', 'admin@aioutlet.com');
+    await page.fill('input[name="email"]', 'admin@xshopai.com');
     await page.fill('input[name="password"]', 'admin123');
     await page.click('button[type="submit"]');
 

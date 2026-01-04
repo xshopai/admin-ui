@@ -90,11 +90,11 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 CMD ["nginx", "-g", "daemon off;"]
 
 # Labels for better image management and security scanning
-LABEL maintainer="xShop.ai Team"
+LABEL maintainer="xshop.ai Team"
 LABEL service="admin-ui"
 LABEL version="1.0.0"
-LABEL org.opencontainers.image.source="https://github.com/aioutlet/aioutlet"
-LABEL org.opencontainers.image.description="Admin UI for xShop.ai platform"
-LABEL org.opencontainers.image.vendor="xShop.ai"
+LABEL org.opencontainers.image.source="https://github.com/xshopai/xshopai"
+LABEL org.opencontainers.image.description="Admin UI for xshop.ai platform"
+LABEL org.opencontainers.image.vendor="xshop.ai"
 LABEL framework="react"
 LABEL language="javascript"
