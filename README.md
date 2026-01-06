@@ -1,6 +1,6 @@
-# xshop.ai Admin UI
+# xshopai Admin UI
 
-A modern React + TypeScript admin dashboard for managing the xshop.ai e-commerce platform. Built with the same design system and theme as the customer-ui for consistent user experience.
+A modern React + TypeScript admin dashboard for managing the xshopai e-commerce platform. Built with the same design system and theme as the customer-ui for consistent user experience.
 
 ## Features
 
@@ -120,5 +120,5 @@ For testing purposes, use any of these admin accounts:
 
 ## License
 
-This project is part of the xshop.ai platform.
-xshop.ai Web UI for admin users
+This project is part of the xshopai platform.
+xshopai Web UI for admin users

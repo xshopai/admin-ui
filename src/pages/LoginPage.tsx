@@ -72,7 +72,7 @@ const LoginPage: React.FC = () => {
                 <span className="text-white font-bold text-lg">AO</span>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">xshop.ai</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">xshopai</h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Admin Portal</p>
               </div>
             </div>
