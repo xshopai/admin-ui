@@ -133,15 +133,14 @@ $ServiceDir = Split-Path -Parent $ScriptDir
 # ============================================================================
 Write-Host "Available Environments:" -ForegroundColor Cyan
 Write-Host "   dev     - Development environment"
-Write-Host "   staging - Staging/QA environment"
 Write-Host "   prod    - Production environment"
 Write-Host ""
 
-$Environment = Get-UserInput -Prompt "Enter environment (dev/staging/prod)" -Default "dev"
+$Environment = Get-UserInput -Prompt "Enter environment (dev/prod)" -Default "dev"
 
-if ($Environment -notmatch '^(dev|staging|prod)$') {
+if ($Environment -notmatch '^(dev|prod)$') {
     Write-Error "Invalid environment: $Environment"
-    Write-Host "   Valid values: dev, staging, prod"
+    Write-Host "   Valid values: dev, prod"
     exit 1
 }
 Write-Success "Environment: $Environment"

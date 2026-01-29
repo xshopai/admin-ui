@@ -104,16 +104,15 @@ SERVICE_DIR="$(dirname "$SCRIPT_DIR")"
 # ============================================================================
 echo -e "${CYAN}Available Environments:${NC}"
 echo "   dev     - Development environment"
-echo "   staging - Staging/QA environment"
 echo "   prod    - Production environment"
 echo ""
 
-read -p "Enter environment (dev/staging/prod) [dev]: " ENVIRONMENT
+read -p "Enter environment (dev/prod) [dev]: " ENVIRONMENT
 ENVIRONMENT="${ENVIRONMENT:-dev}"
 
-if [[ ! "$ENVIRONMENT" =~ ^(dev|staging|prod)$ ]]; then
+if [[ ! "$ENVIRONMENT" =~ ^(dev|prod)$ ]]; then
     print_error "Invalid environment: $ENVIRONMENT"
-    echo "   Valid values: dev, staging, prod"
+    echo "   Valid values: dev, prod"
     exit 1
 fi
 print_success "Environment: $ENVIRONMENT"
