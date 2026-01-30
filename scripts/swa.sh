@@ -205,12 +205,16 @@ print_success "Static Web App Location: $SWA_LOCATION (SWA has limited region av
 print_header "Web BFF Configuration"
 
 print_info "Admin UI calls Web BFF directly (CORS must be enabled on web-bff)"
-EXISTING_BFF_URL=$(az containerapp show --name web-bff --resource-group "$RESOURCE_GROUP" --query "properties.configuration.ingress.fqdn" --output tsv 2>/dev/null || echo "")
+
+# Try naming convention: ca-web-bff-{env}-{suffix}
+BFF_APP_NAME="ca-web-bff-${ENVIRONMENT}-${SUFFIX}"
+EXISTING_BFF_URL=$(az containerapp show --name "$BFF_APP_NAME" --resource-group "$RESOURCE_GROUP" --query "properties.configuration.ingress.fqdn" --output tsv 2>/dev/null || echo "")
+
 if [ -n "$EXISTING_BFF_URL" ]; then
     WEB_BFF_URL="https://$EXISTING_BFF_URL"
     print_success "Found existing Web BFF: $WEB_BFF_URL"
 else
-    print_warning "Web BFF not found in resource group."
+    print_warning "Web BFF not found in resource group (tried: $BFF_APP_NAME)."
     echo ""
     read -p "Enter Web BFF URL: " WEB_BFF_URL
     if [ -z "$WEB_BFF_URL" ]; then
