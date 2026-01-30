@@ -338,6 +338,43 @@ else
 fi
 
 # ============================================================================
+# Step 5: Update Web BFF CORS Configuration
+# ============================================================================
+print_header "Step 5: Updating Web BFF CORS Configuration"
+
+SWA_ORIGIN="https://$APP_URL"
+print_info "Adding $SWA_ORIGIN to web-bff ALLOWED_ORIGINS..."
+
+# Get current ALLOWED_ORIGINS from web-bff
+CURRENT_ORIGINS=$(az containerapp show \
+    --name "$BFF_APP_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --query "properties.template.containers[0].env[?name=='ALLOWED_ORIGINS'].value | [0]" \
+    -o tsv 2>/dev/null || echo "")
+
+# Check if SWA origin is already in the list
+if [[ "$CURRENT_ORIGINS" == *"$SWA_ORIGIN"* ]]; then
+    print_success "CORS already configured for $SWA_ORIGIN"
+else
+    # Build new origins list
+    if [ -n "$CURRENT_ORIGINS" ]; then
+        NEW_ORIGINS="${CURRENT_ORIGINS},${SWA_ORIGIN}"
+    else
+        NEW_ORIGINS="$SWA_ORIGIN,http://localhost:3000"
+    fi
+    
+    print_info "Updating web-bff ALLOWED_ORIGINS to: $NEW_ORIGINS"
+    
+    az containerapp update \
+        --name "$BFF_APP_NAME" \
+        --resource-group "$RESOURCE_GROUP" \
+        --set-env-vars "ALLOWED_ORIGINS=$NEW_ORIGINS" \
+        --output none
+    
+    print_success "Web BFF CORS configuration updated"
+fi
+
+# ============================================================================
 # Summary
 # ============================================================================
 print_header "Deployment Summary"
@@ -356,19 +393,19 @@ echo "   SKU:              Free"
 echo ""
 echo -e "${CYAN}Configuration:${NC}"
 echo "   Web BFF URL:      $WEB_BFF_URL (baked into build)"
+echo "   CORS Origin:      $SWA_ORIGIN (configured on web-bff)"
 echo ""
 echo -e "${CYAN}Features:${NC}"
 echo "   ✓ Global CDN"
 echo "   ✓ Free SSL certificate"
 echo "   ✓ No container overhead"
 echo "   ✓ Instant deployments"
+echo "   ✓ CORS auto-configured on web-bff"
 echo ""
 echo -e "${CYAN}Useful Commands:${NC}"
 echo -e "   View app:         ${BLUE}az staticwebapp show --name $SWA_NAME --resource-group $RESOURCE_GROUP${NC}"
 echo -e "   Delete app:       ${BLUE}az staticwebapp delete --name $SWA_NAME --resource-group $RESOURCE_GROUP --yes${NC}"
 echo -e "   Redeploy:         ${BLUE}./swa.sh${NC}"
-echo ""
-echo -e "${YELLOW}⚠️  Important: Ensure CORS is enabled on web-bff for https://$APP_URL${NC}"
 echo ""
 echo -e "${CYAN}Test the deployment:${NC}"
 echo "   Open in browser: https://$APP_URL"
