@@ -258,6 +258,7 @@ else
         --resource-group "$RESOURCE_GROUP" \
         --location "$SWA_LOCATION" \
         --sku Free \
+        --tags "project=$PROJECT_NAME" "environment=$ENVIRONMENT" "suffix=$SUFFIX" "service=$SERVICE_NAME" \
         --output none
     print_success "Static Web App created"
 fi
