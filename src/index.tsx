@@ -7,6 +7,11 @@ import { store } from './store';
 import { ThemeProvider } from './contexts/ThemeContext';
 import App from './App';
 import './index.css';
+import { initializeAppInsights } from './telemetry';
+
+// Initialize Application Insights for browser telemetry
+// Connection string is injected at build time via REACT_APP_APPINSIGHTS_CONNECTION_STRING
+initializeAppInsights();
 
 const queryClient = new QueryClient({
   defaultOptions: {
