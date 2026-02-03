@@ -33,5 +33,5 @@ root.render(
         <ReactQueryDevtools initialIsOpen={false} />
       </ThemeProvider>
     </QueryClientProvider>
-  </Provider>
+  </Provider>,
 );

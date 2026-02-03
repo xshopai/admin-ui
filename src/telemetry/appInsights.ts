@@ -116,7 +116,7 @@ export function getReactPlugin(): ReactPlugin {
 export function trackEvent(
   name: string,
   properties: Record<string, string> = {},
-  measurements: Record<string, number> = {}
+  measurements: Record<string, number> = {},
 ): void {
   if (appInsights) {
     appInsights.trackEvent({ name, properties, measurements });
