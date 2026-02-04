@@ -185,19 +185,38 @@ print_success "Deployment complete"
 # ============================================================================
 # UPDATE WEB-BFF CORS
 # ============================================================================
-print_header "Configuring CORS"
+print_header "Configuring CORS on Web BFF"
 
 APP_URL=$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RESOURCE_GROUP" --query "defaultHostname" -o tsv)
 SWA_ORIGIN="https://$APP_URL"
 
-CURRENT_ORIGINS=$(az containerapp show --name "$BFF_APP_NAME" --resource-group "$RESOURCE_GROUP" --query "properties.template.containers[0].env[?name=='ALLOWED_ORIGINS'].value | [0]" -o tsv 2>/dev/null || echo "")
+# Get current CORS origins from web-bff ingress
+CURRENT_CORS=$(az containerapp show --name "$BFF_APP_NAME" --resource-group "$RESOURCE_GROUP" \
+    --query "properties.configuration.ingress.corsPolicy.allowedOrigins" -o tsv 2>/dev/null || echo "")
 
-if [[ "$CURRENT_ORIGINS" == *"$SWA_ORIGIN"* ]]; then
-    print_success "CORS already configured"
+if [[ "$CURRENT_CORS" == *"$APP_URL"* ]]; then
+    print_success "CORS already configured for $SWA_ORIGIN"
 else
-    NEW_ORIGINS="${CURRENT_ORIGINS:+$CURRENT_ORIGINS,}$SWA_ORIGIN"
-    az containerapp update --name "$BFF_APP_NAME" --resource-group "$RESOURCE_GROUP" --set-env-vars "ALLOWED_ORIGINS=$NEW_ORIGINS" --output none
-    print_success "CORS updated on web-bff"
+    print_info "Adding $SWA_ORIGIN to web-bff CORS policy..."
+    
+    # Build new origins list (keep existing + add new)
+    CORS_ORIGINS="$SWA_ORIGIN http://localhost:3000 http://localhost:3001"
+    
+    # Add customer-ui if it exists
+    CUSTOMER_UI_URL=$(az staticwebapp show --name "swa-customer-ui-${ENVIRONMENT}-${SUFFIX}" --resource-group "$RESOURCE_GROUP" --query "defaultHostname" -o tsv 2>/dev/null || echo "")
+    [ -n "$CUSTOMER_UI_URL" ] && CORS_ORIGINS="https://$CUSTOMER_UI_URL $CORS_ORIGINS"
+    
+    az containerapp ingress cors update \
+        --name "$BFF_APP_NAME" \
+        --resource-group "$RESOURCE_GROUP" \
+        --allowed-origins $CORS_ORIGINS \
+        --allowed-methods GET POST PUT PATCH DELETE OPTIONS \
+        --allowed-headers "*" \
+        --expose-headers traceparent x-correlation-id \
+        --allow-credentials true \
+        --output none
+    
+    print_success "CORS updated on web-bff for $SWA_ORIGIN"
 fi
 
 # ============================================================================
