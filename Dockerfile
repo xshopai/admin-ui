@@ -58,11 +58,15 @@ RUN npm run build
 # -----------------------------------------------------------------------------
 FROM nginx:1.27-alpine AS production
 
-# Install wget for healthcheck
-RUN apk add --no-cache wget
+# Install wget for healthcheck and gettext for envsubst
+RUN apk add --no-cache wget gettext
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx config as template (will be processed by entrypoint)
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Copy built application from build stage
 COPY --from=build /app/build /usr/share/nginx/html
@@ -73,6 +77,7 @@ RUN addgroup -g 1001 -S nginx-app && \
     chown -R nginx-app:nginx-app /usr/share/nginx/html && \
     chown -R nginx-app:nginx-app /var/cache/nginx && \
     chown -R nginx-app:nginx-app /var/log/nginx && \
+    chown -R nginx-app:nginx-app /etc/nginx/conf.d && \
     touch /var/run/nginx.pid && \
     chown -R nginx-app:nginx-app /var/run/nginx.pid
 
@@ -80,13 +85,17 @@ RUN addgroup -g 1001 -S nginx-app && \
 USER nginx-app
 
 # Expose port
-EXPOSE 8080
+EXPOSE 80
+
+# Environment variable for BFF URL (can be overridden at runtime)
+ENV BFF_URL=http://localhost:8014
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080 || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:80 || exit 1
 
-# Start nginx
+# Use entrypoint script for env substitution, then start nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
 
 # Labels for better image management and security scanning
