@@ -59,7 +59,7 @@ bffApiClient.interceptors.response.use(
       });
     } else if (error.request) {
       // Request was made but no response received (network error)
-      logger.error(`Network Error: Cannot reach ${BFF_API_URL}`, {
+      logger.error(`Network Error: Cannot reach ${REACT_APP_BFF_URL}`, {
         errorCode: error.code,
         message: 'BFF service may not be running',
         url: error.config?.url,
