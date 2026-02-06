@@ -4,11 +4,14 @@ import logger from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 // Base API configuration - Route through BFF
-const BFF_API_URL = process.env.REACT_APP_BFF_API_URL || 'http://localhost:8080';
+// - For Docker: Use relative URL (nginx proxies /api to web-bff)
+// - For local development: Use REACT_APP_BFF_URL or localhost:8014
+const REACT_APP_BFF_URL =
+  process.env.REACT_APP_BFF_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8014');
 
 // Create axios instance for BFF API
 export const bffApiClient: AxiosInstance = axios.create({
-  baseURL: BFF_API_URL,
+  baseURL: REACT_APP_BFF_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -39,7 +42,7 @@ bffApiClient.interceptors.request.use(
   (error) => {
     logger.error('API Request Setup Failed', { error: error.message });
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for BFF API error handling
@@ -73,14 +76,14 @@ bffApiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // Auth API functions
 export const authApi = {
   login: async (
     email: string,
-    password: string
+    password: string,
   ): Promise<ApiResponse<{ user: any; token: string; refreshToken: string }>> => {
     try {
       const response = await authApiClient.post('/api/auth/login', {
@@ -361,7 +364,7 @@ export const dashboardApi = {
   getRecentOrders: async (limit: number = 10) => {
     // Use the stats endpoint with includeRecent flag
     const response = await adminApiClient.get<ApiResponse<any>>(
-      `/api/admin/dashboard/stats?includeRecent=true&recentLimit=${limit}`
+      `/api/admin/dashboard/stats?includeRecent=true&recentLimit=${limit}`,
     );
     return (response.data as any).recentOrders || [];
   },
@@ -369,7 +372,7 @@ export const dashboardApi = {
   getRecentUsers: async (limit: number = 10) => {
     // Use the stats endpoint with includeRecent flag
     const response = await adminApiClient.get<ApiResponse<any>>(
-      `/api/admin/dashboard/stats?includeRecent=true&recentLimit=${limit}`
+      `/api/admin/dashboard/stats?includeRecent=true&recentLimit=${limit}`,
     );
     return (response.data as any).recentUsers || [];
   },
