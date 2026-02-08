@@ -84,6 +84,14 @@ const LoginPage: React.FC = () => {
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Access the admin dashboard to manage your platform
           </p>
+
+          {/* Development credentials hint */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 text-center p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">🔑 Demo Credentials</p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">admin@xshopai.com / admin</p>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { reviewsApi } from '../services/api';
-import { Review } from '../types';
+import { Review, User } from '../types';
 import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';

@@ -4,8 +4,12 @@
 
 set -e
 
-# Default BFF_URL if not set
-BFF_URL=${BFF_URL:-"http://localhost:8014"}
+# Prefer WEB_BFF_URL if set, otherwise use BFF_URL, otherwise default
+if [ -n "$WEB_BFF_URL" ]; then
+    BFF_URL="$WEB_BFF_URL"
+elif [ -z "$BFF_URL" ]; then
+    BFF_URL="http://localhost:8014"
+fi
 
 # Extract hostname from BFF_URL for the Host header
 # Removes protocol (http:// or https://) and any trailing path/port
