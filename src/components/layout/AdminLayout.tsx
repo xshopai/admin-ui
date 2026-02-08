@@ -91,9 +91,9 @@ const AdminLayout: React.FC = () => {
           <div className="flex h-16 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AO</span>
+                <span className="text-white font-bold text-sm">XS</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">xshopai</h1>
             </div>
             <button
               type="button"
@@ -122,26 +122,6 @@ const AdminLayout: React.FC = () => {
               </Link>
             ))}
           </nav>
-
-          {/* Mobile user info */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-xs">{displayName.charAt(0).toUpperCase()}</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{displayName}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center px-2 py-2 text-sm font-medium text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-            >
-              <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5" />
-              Sign out
-            </button>
-          </div>
         </div>
       </div>
 
@@ -152,9 +132,9 @@ const AdminLayout: React.FC = () => {
           <div className="flex items-center h-16 flex-shrink-0 px-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AO</span>
+                <span className="text-white font-bold text-sm">XS</span>
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">xshopai Admin</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">xshopai</h1>
             </div>
           </div>
 
@@ -175,26 +155,6 @@ const AdminLayout: React.FC = () => {
               </Link>
             ))}
           </nav>
-
-          {/* User info */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-xs">{displayName.charAt(0).toUpperCase()}</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{displayName}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center px-2 py-2 text-sm font-medium text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-            >
-              <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5" />
-              Sign out
-            </button>
-          </div>
         </div>
       </div>
 
@@ -227,13 +187,23 @@ const AdminLayout: React.FC = () => {
               <ThemeToggle />
 
               {/* User menu for desktop */}
-              <div className="hidden lg:block">
-                <div className="flex items-center space-x-2">
+              <div className="hidden lg:flex lg:items-center lg:space-x-3">
+                <div className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-medium text-xs">{displayName.charAt(0).toUpperCase()}</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{displayName}</span>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{displayName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                  </div>
                 </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  title="Sign out"
+                >
+                  <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+                </button>
               </div>
             </div>
           </div>

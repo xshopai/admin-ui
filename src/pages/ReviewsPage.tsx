@@ -52,7 +52,7 @@ const ReviewsPage: React.FC = () => {
           review.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           review.comment.toLowerCase().includes(searchTerm.toLowerCase()) ||
           review.user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          review.user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
+          review.user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -88,13 +88,25 @@ const ReviewsPage: React.FC = () => {
         productId: review.productId,
         product: review.product,
         userId: review.userId,
-        user: review.user || { id: review.userId, name: review.username || 'Unknown User' },
+        // Backend now provides enriched user data
+        user: review.user
+          ? ({
+              id: review.user.userId || review.userId,
+              firstName: review.user.firstName,
+              lastName: review.user.lastName,
+              email: review.user.email,
+              role: 'customer',
+              roles: ['customer'],
+              status: 'active',
+              createdAt: review.user.createdAt || review.createdAt,
+            } as User)
+          : undefined,
         rating: review.rating,
         title: review.title || '',
         comment: review.comment || '',
         status: review.status,
         createdAt: review.createdAt || review.metadata?.createdAt,
-        verified: review.isVerifiedPurchase,
+        verified: review.isVerifiedPurchase || review.verifiedPurchase,
         helpfulVotes: review.helpfulVotes || { helpful: 0, notHelpful: 0 },
       }));
 
@@ -332,9 +344,9 @@ const ReviewsPage: React.FC = () => {
                   <TableCell>
                     <div>
                       <div className="font-medium text-gray-900 dark:text-white">
-                        {[review.user?.firstName, review.user?.lastName].filter(Boolean).join(' ') || 
-                         review.user?.email || 
-                         'Unknown User'}
+                        {[review.user?.firstName, review.user?.lastName].filter(Boolean).join(' ') ||
+                          review.user?.email ||
+                          'Unknown User'}
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
                         {review.product?.name || 'Product'}
@@ -408,7 +420,8 @@ const ReviewsPage: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">User</label>
               <p className="text-gray-900 dark:text-white">
-                {[selectedReview.user?.firstName, selectedReview.user?.lastName].filter(Boolean).join(' ') || selectedReview.user?.email}
+                {[selectedReview.user?.firstName, selectedReview.user?.lastName].filter(Boolean).join(' ') ||
+                  selectedReview.user?.email}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">{selectedReview.user?.email}</p>
             </div>
@@ -493,8 +506,12 @@ const ReviewsPage: React.FC = () => {
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Delete Review" size="sm">
         <div className="space-y-4">
           <p className="text-gray-600 dark:text-gray-400">
-            Are you sure you want to delete this review from <strong>{[selectedReview?.user?.firstName, selectedReview?.user?.lastName].filter(Boolean).join(' ') || selectedReview?.user?.email}</strong>? This action
-            cannot be undone.
+            Are you sure you want to delete this review from{' '}
+            <strong>
+              {[selectedReview?.user?.firstName, selectedReview?.user?.lastName].filter(Boolean).join(' ') ||
+                selectedReview?.user?.email}
+            </strong>
+            ? This action cannot be undone.
           </p>
 
           <div className="flex justify-end gap-3 pt-4">
