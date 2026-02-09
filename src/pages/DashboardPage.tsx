@@ -160,9 +160,7 @@ const DashboardPage: React.FC = () => {
               <ChartBarIcon className="h-5 w-5 text-gray-500" />
               Key Business Metrics
             </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-              TODO: Time-based filtering coming soon
-            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 italic">TODO: Time-based filtering coming soon</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Revenue Card */}
