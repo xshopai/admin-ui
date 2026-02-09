@@ -34,7 +34,6 @@ const navigation: SidebarItem[] = [
   { name: 'Inventory', href: '/inventory', icon: ClipboardDocumentListIcon },
   { name: 'Orders', href: '/orders', icon: ShoppingBagIcon },
   { name: 'Reviews', href: '/reviews', icon: StarIcon },
-  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
 
