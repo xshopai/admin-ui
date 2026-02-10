@@ -186,7 +186,16 @@ export const authApi = {
 
 // Users API functions
 export const usersApi = {
-  getAll: async (params?: { page?: number; limit?: number; search?: string; role?: string; status?: string }) => {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+    status?: string;
+    email?: string;
+    isActive?: string;
+    isEmailVerified?: string;
+  }) => {
     const response = await adminApiClient.get<PaginatedResponse<any>>('/api/admin/users', { params });
     return response.data;
   },
@@ -213,6 +222,11 @@ export const usersApi = {
 
   updateStatus: async (id: string, status: string) => {
     const response = await adminApiClient.patch<ApiResponse<any>>(`/api/admin/users/${id}/status`, { status });
+    return response.data;
+  },
+
+  resetPassword: async (id: string, email: string) => {
+    const response = await adminApiClient.post<ApiResponse<any>>(`/api/admin/users/${id}/reset-password`, { email });
     return response.data;
   },
 };

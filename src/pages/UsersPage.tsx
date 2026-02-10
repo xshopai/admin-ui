@@ -10,13 +10,20 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 const UsersPage: React.FC = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrevious: false,
+  });
 
   // Modal states
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -24,58 +31,58 @@ const UsersPage: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
-
-  const filterUsers = useCallback(() => {
-    let filtered = [...users];
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (user) =>
-          (user.firstName && user.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (user.lastName && user.lastName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Role filter
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter((user) => user.role === roleFilter);
-    }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((user) => user.status === statusFilter);
-    }
-
-    setFilteredUsers(filtered);
-  }, [users, searchTerm, roleFilter, statusFilter]);
-
-  useEffect(() => {
-    filterUsers();
-  }, [filterUsers]);
+  }, [pagination.page, searchTerm, roleFilter, statusFilter]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await usersApi.getAll();
+
+      // Build query params for backend filtering
+      const params: any = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+
+      if (searchTerm) params.search = searchTerm;
+      if (roleFilter !== 'all') params.role = roleFilter;
+      if (statusFilter !== 'all') params.isActive = statusFilter === 'active' ? 'true' : 'false';
+
+      const response = await usersApi.getAll(params);
+
+      // Handle both response formats (with/without pagination wrapper)
+      const userData = response.users || response.data || response;
+      const paginationData = response.pagination;
 
       // Transform the backend data to match our User interface
-      const transformedUsers = response.data.map((user: any) => ({
-        id: user._id || user.id,
-        name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email,
-        email: user.email,
-        roles: user.roles || ['customer'],
-        role: user.roles?.includes('admin') ? ('admin' as const) : ('customer' as const), // Primary role
-        status: user.isActive ? ('active' as const) : ('inactive' as const),
-        createdAt: user.createdAt,
-        lastLogin: user.lastLoginAt,
-        phone: user.phone,
-      }));
+      const transformedUsers = Array.isArray(userData)
+        ? userData.map((user: any) => ({
+            id: user._id || user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email,
+            email: user.email,
+            roles: user.roles || ['customer'],
+            role: user.roles?.includes('admin') ? ('admin' as const) : ('customer' as const), // Primary role
+            status: user.isActive ? ('active' as const) : ('inactive' as const),
+            createdAt: user.createdAt,
+            lastLogin: user.lastLoginAt,
+            phone: user.phone,
+          }))
+        : [];
 
       setUsers(transformedUsers);
+
+      if (paginationData) {
+        setPagination({
+          page: paginationData.page || 1,
+          limit: paginationData.limit || 20,
+          total: paginationData.total || 0,
+          totalPages: paginationData.totalPages || 0,
+          hasNext: paginationData.hasNext || false,
+          hasPrevious: paginationData.hasPrevious || false,
+        });
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load users');
       console.error('Error fetching users:', err);
@@ -218,17 +225,17 @@ const UsersPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="card p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Total Users</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{users.length}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{pagination.total}</p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Active Users</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Active Users (Current Page)</p>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
             {users.filter((u) => u.status === 'active').length}
           </p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Filtered Results</p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{filteredUsers.length}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Users on Page</p>
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{users.length}</p>
         </div>
       </div>
 
@@ -246,14 +253,14 @@ const UsersPage: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.length === 0 ? (
+            {users.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                   No users found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredUsers.map((user) => (
+              users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="font-medium">
@@ -299,11 +306,45 @@ const UsersPage: React.FC = () => {
         </Table>
       </div>
 
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white dark:bg-gray-800 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              Page <span className="font-medium">{pagination.page}</span> of{' '}
+              <span className="font-medium">{pagination.totalPages}</span>
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Total: {pagination.total} users</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+              disabled={!pagination.hasPrevious}
+              className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+              disabled={!pagination.hasNext}
+              className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Delete User" size="sm">
         <div className="space-y-4">
           <p className="text-gray-600 dark:text-gray-400">
-            Are you sure you want to delete <strong>{[selectedUser?.firstName, selectedUser?.lastName].filter(Boolean).join(' ') || selectedUser?.email}</strong>? This action cannot be undone.
+            Are you sure you want to delete{' '}
+            <strong>
+              {[selectedUser?.firstName, selectedUser?.lastName].filter(Boolean).join(' ') || selectedUser?.email}
+            </strong>
+            ? This action cannot be undone.
           </p>
 
           <div className="flex justify-end gap-3 pt-4">

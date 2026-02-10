@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { productsApi } from '../services/api';
 import { RootState } from '../store';
+
+interface Variant {
+  id: string;
+  color: string;
+  size: string;
+  initial_stock: number;
+  generated_sku?: string; // Preview only
+}
 
 const AddProductPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,19 +26,17 @@ const AddProductPage: React.FC = () => {
     description: '',
     price: '',
     brand: '',
-    sku: '',
     department: '',
     category: '',
     subcategory: '',
     product_type: '',
     images: '',
     tags: '',
-    colors: '',
-    sizes: '',
     specifications: {} as Record<string, string>,
     is_active: true,
   });
 
+  const [variants, setVariants] = useState<Variant[]>([]);
   const [specKey, setSpecKey] = useState('');
   const [specValue, setSpecValue] = useState('');
 
@@ -45,6 +51,95 @@ const AddProductPage: React.FC = () => {
     Books: ['Fiction', 'Non-Fiction', 'Educational', 'Comics'],
     Home: ['Furniture', 'Decor', 'Kitchen', 'Bedding'],
     Beauty: ['Skincare', 'Makeup', 'Haircare', 'Fragrance'],
+  };
+
+  // Auto-generate SKU preview (matches backend logic)
+  const generateSkuPreview = (productName: string, color?: string, size?: string): string => {
+    if (!productName.trim()) return 'PROD';
+
+    // Extract initials and numbers from product name
+    const cleaned = productName.replace(/[^a-zA-Z0-9\s]/g, '');
+    const words = cleaned.split(/\s+/).filter(Boolean);
+
+    let initials = '';
+    let numbers = '';
+
+    words.forEach((word) => {
+      if (word[0] && /[a-zA-Z]/.test(word[0])) {
+        initials += word[0];
+      }
+      const wordNumbers = word.match(/\d+/);
+      if (wordNumbers) {
+        numbers += wordNumbers[0];
+      }
+    });
+
+    let code = (initials + numbers).substring(0, 10);
+    if (code.length < 2) code = code.padEnd(4, 'P');
+
+    const parts = [code.toUpperCase()];
+
+    if (color) {
+      const colorCode = color.length <= 5 ? color.substring(0, 3) : color.substring(0, 3);
+      parts.push(colorCode.toUpperCase());
+    }
+
+    if (size) {
+      const sizeMap: Record<string, string> = {
+        'extra small': 'XS',
+        small: 'S',
+        medium: 'M',
+        large: 'L',
+        'extra large': 'XL',
+        xxl: 'XXL',
+      };
+      const sizeLower = size.toLowerCase().trim();
+      const sizeCode = sizeMap[sizeLower] || (size.match(/\d+/) || [size.substring(0, 3)])[0];
+      parts.push(sizeCode.toUpperCase());
+    }
+
+    return parts.join('-');
+  };
+
+  // Update SKU previews when product name or variant attributes change
+  useEffect(() => {
+    setVariants((prev) =>
+      prev.map((v) => ({
+        ...v,
+        generated_sku: generateSkuPreview(formData.name, v.color, v.size),
+      })),
+    );
+  }, [formData.name]);
+
+  const addVariant = () => {
+    const newVariant: Variant = {
+      id: Date.now().toString(),
+      color: '',
+      size: '',
+      initial_stock: 0,
+      generated_sku: generateSkuPreview(formData.name, '', ''),
+    };
+    setVariants([...variants, newVariant]);
+  };
+
+  const removeVariant = (id: string) => {
+    setVariants(variants.filter((v) => v.id !== id));
+  };
+
+  const updateVariant = (id: string, field: keyof Variant, value: string | number) => {
+    setVariants((prev) =>
+      prev.map((v) => {
+        if (v.id === id) {
+          const updated = { ...v, [field]: value };
+          // Regenerate SKU preview
+          if (field === 'color' || field === 'size') {
+            updated.generated_sku = generateSkuPreview(formData.name, updated.color, updated.size);
+          }
+          return updated;
+        }
+        return v;
+      }),
+    );
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -95,9 +190,21 @@ const AddProductPage: React.FC = () => {
       setError('Valid price is required');
       return;
     }
-    if (!formData.sku.trim()) {
-      setError('SKU is required');
+    if (variants.length === 0) {
+      setError('At least one variant is required');
       return;
+    }
+
+    // Validate variants
+    for (const variant of variants) {
+      if (!variant.color && !variant.size) {
+        setError('Each variant must have at least color or size specified');
+        return;
+      }
+      if (variant.initial_stock < 0) {
+        setError('Initial stock cannot be negative');
+        return;
+      }
     }
 
     try {
@@ -109,11 +216,12 @@ const AddProductPage: React.FC = () => {
         description: formData.description.trim(),
         price: parseFloat(formData.price),
         brand: formData.brand.trim() || undefined,
-        sku: formData.sku.trim(),
-        department: formData.department || undefined,
-        category: formData.category || undefined,
-        subcategory: formData.subcategory || undefined,
-        product_type: formData.product_type || undefined,
+        taxonomy: {
+          department: formData.department || undefined,
+          category: formData.category || undefined,
+          subcategory: formData.subcategory || undefined,
+          product_type: formData.product_type || undefined,
+        },
         images: formData.images
           ? formData.images
               .split(',')
@@ -126,21 +234,13 @@ const AddProductPage: React.FC = () => {
               .map((tag) => tag.trim())
               .filter(Boolean)
           : [],
-        colors: formData.colors
-          ? formData.colors
-              .split(',')
-              .map((c) => c.trim())
-              .filter(Boolean)
-          : [],
-        sizes: formData.sizes
-          ? formData.sizes
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : [],
+        variants: variants.map((v) => ({
+          color: v.color || undefined,
+          size: v.size || undefined,
+          initial_stock: v.initial_stock,
+        })),
         specifications: formData.specifications,
-        is_active: formData.is_active,
-        created_by: user?.id || 'ADMIN',
+        status: 'active',
       };
 
       console.log('Creating product with data:', productData);
@@ -229,20 +329,6 @@ const AddProductPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                SKU <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="sku"
-                value={formData.sku}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white"
-                required
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Brand</label>
               <input
                 type="text"
@@ -323,36 +409,93 @@ const AddProductPage: React.FC = () => {
 
         {/* Variants */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Variants</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Colors (comma-separated)
-              </label>
-              <input
-                type="text"
-                name="colors"
-                value={formData.colors}
-                onChange={handleInputChange}
-                placeholder="e.g., Red, Blue, Black"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Sizes (comma-separated)
-              </label>
-              <input
-                type="text"
-                name="sizes"
-                value={formData.sizes}
-                onChange={handleInputChange}
-                placeholder="e.g., S, M, L, XL"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Product Variants <span className="text-red-500">*</span>
+            </h2>
+            <button
+              type="button"
+              onClick={addVariant}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Add Variant
+            </button>
           </div>
+
+          {variants.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+              <p className="text-gray-500 dark:text-gray-400 mb-2">No variants added yet</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                Add variants to define different color/size options with initial stock
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {variants.map((variant, index) => (
+                <div
+                  key={variant.id}
+                  className="p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-gray-900 dark:text-white">Variant {index + 1}</h3>
+                    <button
+                      type="button"
+                      onClick={() => removeVariant(variant.id)}
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
+                      <input
+                        type="text"
+                        value={variant.color}
+                        onChange={(e) => updateVariant(variant.id, 'color', e.target.value)}
+                        placeholder="e.g., Black, White"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Size</label>
+                      <input
+                        type="text"
+                        value={variant.size}
+                        onChange={(e) => updateVariant(variant.id, 'size', e.target.value)}
+                        placeholder="e.g., M, 128GB"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Initial Stock
+                      </label>
+                      <input
+                        type="number"
+                        value={variant.initial_stock}
+                        onChange={(e) => updateVariant(variant.id, 'initial_stock', parseInt(e.target.value) || 0)}
+                        min="0"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {variant.generated_sku && (
+                    <div className="mt-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
+                      <span className="text-xs text-purple-700 dark:text-purple-300 font-medium">
+                        Auto-generated SKU: <code className="font-mono">{variant.generated_sku}</code>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Media & Metadata */}

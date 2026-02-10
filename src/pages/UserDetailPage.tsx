@@ -48,6 +48,19 @@ const UserDetailPage: React.FC = () => {
     },
   });
 
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: () => usersApi.resetPassword(id!, user?.email || ''),
+    onSuccess: () => {
+      logger.info('Password reset email sent successfully', { userId: id, email: user?.email });
+      alert(`Password reset email sent to ${user?.email}`);
+    },
+    onError: (error: any) => {
+      logger.error('Failed to send password reset email', { error, userId: id });
+      alert('Failed to send password reset email. Please try again.');
+    },
+  });
+
   const user = userData?.data;
 
   if (isLoading) {
@@ -77,6 +90,12 @@ const UserDetailPage: React.FC = () => {
   const handleStatusUpdate = (status: string) => {
     if (window.confirm(`Are you sure you want to ${status === 'active' ? 'activate' : 'suspend'} this user?`)) {
       updateStatusMutation.mutate(status);
+    }
+  };
+
+  const handleResetPassword = () => {
+    if (window.confirm(`Send password reset email to ${user?.email}?`)) {
+      resetPasswordMutation.mutate();
     }
   };
 
@@ -127,9 +146,7 @@ const UserDetailPage: React.FC = () => {
             </div>
           </div>
         </div>
-        <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(userStatus)}`}>
-          {userStatus}
-        </span>
+        <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(userStatus)}`}>{userStatus}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -217,6 +234,25 @@ const UserDetailPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Password Reset Button */}
+              <button
+                onClick={handleResetPassword}
+                disabled={resetPasswordMutation.isPending}
+                className="w-full px-4 py-3 bg-yellow-500 hover:bg-yellow-600 disabled:bg-yellow-300 text-white font-medium rounded-lg transition-colors disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {resetPasswordMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <EnvelopeIcon className="h-5 w-5 mr-2" />
+                    Send Password Reset Email
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
