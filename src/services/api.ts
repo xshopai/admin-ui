@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { ApiResponse, PaginatedResponse } from '../types';
 import logger from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { parseApiError, requiresReAuth } from '../utils/errorMessages';
 
 // Base API configuration - Route through BFF
 // - For Docker: Use relative URL (nginx proxies /api to web-bff)
@@ -49,25 +50,19 @@ bffApiClient.interceptors.request.use(
 bffApiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Only log meaningful error information
-    if (error.response) {
-      // Server responded with error status
-      logger.error(`API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
-        statusCode: error.response.status,
-        statusText: error.response.statusText,
-        message: error.response.data?.message || error.response.data?.error?.message,
-      });
-    } else if (error.request) {
-      // Request was made but no response received (network error)
-      logger.error(`Network Error: Cannot reach ${REACT_APP_BFF_URL}`, {
-        errorCode: error.code,
-        message: 'BFF service may not be running',
-        url: error.config?.url,
-      });
-    }
+    // Parse error with user-friendly messages
+    const errorInfo = parseApiError(error);
 
-    // Handle 401 unauthorized
-    if (error.response?.status === 401) {
+    // Log meaningful error information
+    logger.error(`API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
+      code: errorInfo.code,
+      message: errorInfo.message,
+      statusCode: errorInfo.statusCode,
+      correlationId: error.response?.headers?.['x-correlation-id'],
+    });
+
+    // Handle 401 unauthorized - redirect to login
+    if (requiresReAuth(errorInfo)) {
       logger.warn('Session expired - redirecting to login');
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_refresh_token');
@@ -75,7 +70,14 @@ bffApiClient.interceptors.response.use(
       window.location.href = '/login';
     }
 
-    return Promise.reject(error);
+    // Enhance error with user-friendly message
+    const enhancedError: any = new Error(errorInfo.message);
+    enhancedError.code = errorInfo.code;
+    enhancedError.statusCode = errorInfo.statusCode;
+    enhancedError.details = errorInfo.details;
+    enhancedError.response = error.response;
+
+    return Promise.reject(enhancedError);
   },
 );
 
