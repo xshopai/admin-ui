@@ -398,3 +398,38 @@ export const dashboardApi = {
     return response.data;
   },
 };
+
+// Returns API functions
+export const returnsApi = {
+  getAll: async () => {
+    const response = await adminApiClient.get<ApiResponse<any[]>>('/api/admin/returns');
+    return response.data;
+  },
+
+  getPaged: async (params?: { page?: number; pageSize?: number; status?: string }) => {
+    const response = await adminApiClient.get<PaginatedResponse<any>>('/api/admin/returns/paged', { params });
+    return response.data;
+  },
+
+  getById: async (id: string) => {
+    const response = await adminApiClient.get<ApiResponse<any>>(`/api/admin/returns/${id}`);
+    return response.data;
+  },
+
+  updateStatus: async (
+    id: string,
+    data: {
+      status: string;
+      notes?: string;
+      rejectionReason?: string;
+    },
+  ) => {
+    const response = await adminApiClient.put<ApiResponse<any>>(`/api/admin/returns/${id}/status`, data);
+    return response.data;
+  },
+
+  getStats: async () => {
+    const response = await adminApiClient.get<ApiResponse<any>>('/api/admin/returns/stats');
+    return response.data;
+  },
+};

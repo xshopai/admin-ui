@@ -15,6 +15,8 @@ import EditProductPage from './pages/EditProductPage';
 import InventoryPage from './pages/InventoryPage';
 import OrdersPage from './pages/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage';
+import ReturnsDashboard from './pages/ReturnsDashboard';
+import ReturnDetailPage from './pages/ReturnDetailPage';
 import ReviewsPage from './pages/ReviewsPage';
 import SettingsPage from './pages/SettingsPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -48,6 +50,8 @@ function App() {
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="orders/:id" element={<OrderDetailPage />} />
+            <Route path="returns" element={<ReturnsDashboard />} />
+            <Route path="returns/:id" element={<ReturnDetailPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

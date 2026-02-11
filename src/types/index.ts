@@ -202,6 +202,56 @@ export interface DashboardStats {
   };
 }
 
+// Return types
+export interface ReturnItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productImageUrl?: string;
+  quantityToReturn: number;
+  unitPrice: number;
+  refundAmount: number;
+  itemCondition?: string;
+}
+
+export interface Return {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  customerId: string;
+  customerEmail?: string;
+  customerName?: string;
+  returnNumber: string;
+  status: 'Requested' | 'Approved' | 'Rejected' | 'ItemsReceived' | 'Inspecting' | 'Completed' | 'RefundProcessed';
+  reason: string;
+  description: string;
+  items: ReturnItem[];
+  itemsRefundAmount: number;
+  shippingRefundAmount: number;
+  totalRefundAmount: number;
+  approvedAt?: string;
+  approvedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  itemsReceivedAt?: string;
+  completedAt?: string;
+  processedBy?: string;
+  refundProcessedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ReturnStats {
+  Requested?: number;
+  Approved?: number;
+  Rejected?: number;
+  ItemsReceived?: number;
+  Inspecting?: number;
+  Completed?: number;
+  RefundProcessed?: number;
+}
+
 export interface ApiResponse<T> {
   data: T;
   message?: string;

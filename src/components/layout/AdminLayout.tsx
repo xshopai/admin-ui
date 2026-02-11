@@ -14,6 +14,7 @@ import {
   Bars3Icon,
   XMarkIcon,
   BellIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { logout } from '../../store/slices/authSlice';
 import { RootState } from '../../store';
@@ -33,6 +34,7 @@ const navigation: SidebarItem[] = [
   { name: 'Products', href: '/products', icon: CubeIcon },
   { name: 'Inventory', href: '/inventory', icon: ClipboardDocumentListIcon },
   { name: 'Orders', href: '/orders', icon: ShoppingBagIcon },
+  { name: 'Returns', href: '/returns', icon: ArrowPathIcon },
   { name: 'Reviews', href: '/reviews', icon: StarIcon },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
