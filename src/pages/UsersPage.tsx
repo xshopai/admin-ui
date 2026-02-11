@@ -51,7 +51,8 @@ const UsersPage: React.FC = () => {
       const response = await usersApi.getAll(params);
 
       // Handle both response formats (with/without pagination wrapper)
-      const userData = response.users || response.data || response;
+      const responseAny = response as any;
+      const userData = responseAny.users || response.data || response;
       const paginationData = response.pagination;
 
       // Transform the backend data to match our User interface
@@ -74,13 +75,14 @@ const UsersPage: React.FC = () => {
       setUsers(transformedUsers);
 
       if (paginationData) {
+        const pg = paginationData as any;
         setPagination({
-          page: paginationData.page || 1,
-          limit: paginationData.limit || 20,
-          total: paginationData.total || 0,
-          totalPages: paginationData.totalPages || 0,
-          hasNext: paginationData.hasNext || false,
-          hasPrevious: paginationData.hasPrevious || false,
+          page: pg.page || 1,
+          limit: pg.limit || 20,
+          total: pg.total || 0,
+          totalPages: pg.totalPages || 0,
+          hasNext: pg.hasNext || false,
+          hasPrevious: pg.hasPrevious || false,
         });
       }
     } catch (err: any) {

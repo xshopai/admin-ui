@@ -134,14 +134,14 @@ const ReturnDetailPage: React.FC = () => {
   };
 
   // Status badge variant
-  const getStatusVariant = (status: string): 'info' | 'success' | 'danger' | 'warning' | 'default' => {
+  const getStatusVariant = (status: string): 'info' | 'success' | 'error' | 'warning' | 'default' => {
     switch (status) {
       case 'Requested':
         return 'info';
       case 'Approved':
         return 'success';
       case 'Rejected':
-        return 'danger';
+        return 'error';
       case 'ItemsReceived':
       case 'Inspecting':
         return 'warning';
