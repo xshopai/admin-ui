@@ -50,10 +50,10 @@ const UsersPage: React.FC = () => {
 
       const response = await usersApi.getAll(params);
 
-      // Handle both response formats (with/without pagination wrapper)
+      // Handle nested response format: { success: true, data: { users: [...], pagination: {...} } }
       const responseAny = response as any;
-      const userData = responseAny.users || response.data || response;
-      const paginationData = response.pagination;
+      const userData = responseAny.data?.users || responseAny.users || responseAny.data || response;
+      const paginationData = responseAny.data?.pagination || responseAny.pagination;
 
       // Transform the backend data to match our User interface
       const transformedUsers = Array.isArray(userData)

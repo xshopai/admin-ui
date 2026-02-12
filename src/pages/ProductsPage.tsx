@@ -15,6 +15,29 @@ import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 
+// Product thumbnail component with fallback for broken images
+const ProductThumbnail: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (!src || hasError) {
+    return (
+      <div className="h-10 w-10 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+        <PhotoIcon className="h-6 w-6 text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-10 w-10 rounded object-cover"
+      loading="lazy"
+      onError={() => setHasError(true)}
+    />
+  );
+};
+
 const ProductsPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -355,13 +378,10 @@ const ProductsPage: React.FC = () => {
                 <TableRow key={product.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      {product.images && product.images.length > 0 ? (
-                        <img src={product.images[0]} alt={product.name} className="h-10 w-10 rounded object-cover" />
-                      ) : (
-                        <div className="h-10 w-10 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                          <PhotoIcon className="h-6 w-6 text-gray-400" />
-                        </div>
-                      )}
+                      <ProductThumbnail
+                        src={product.images?.[0]}
+                        alt={product.name}
+                      />
                       <div>
                         <div className="font-medium">{product.name}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">

@@ -60,13 +60,19 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const stats = dashboardData?.data || {
+  const defaultStats = {
     users: { total: 0, active: 0, newThisMonth: 0, growth: 0 },
     orders: { total: 0, pending: 0, processing: 0, completed: 0, revenue: 0, growth: 0 },
     products: { total: 0, active: 0, lowStock: 0, outOfStock: 0 },
     reviews: { total: 0, pending: 0, averageRating: 0, growth: 0 },
     recentOrders: [],
     recentUsers: [],
+  };
+  const stats = {
+    ...defaultStats,
+    ...dashboardData?.data,
+    recentOrders: dashboardData?.data?.recentOrders || [],
+    recentUsers: dashboardData?.data?.recentUsers || [],
   };
 
   // Calculate analytics from stats (frontend calculations)
