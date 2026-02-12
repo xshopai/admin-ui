@@ -84,7 +84,7 @@ const ProductsPage: React.FC = () => {
         (product) =>
           product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.sku.toLowerCase().includes(searchTerm.toLowerCase())
+          product.sku.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -378,10 +378,7 @@ const ProductsPage: React.FC = () => {
                 <TableRow key={product.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <ProductThumbnail
-                        src={product.images?.[0]}
-                        alt={product.name}
-                      />
+                      <ProductThumbnail src={product.images?.[0]} alt={product.name} />
                       <div>
                         <div className="font-medium">{product.name}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
