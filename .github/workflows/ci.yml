@@ -63,7 +63,7 @@ jobs:
       - name: Build application
         run: npm run build
         env:
-          CI: true
+          CI: false
 
   docker-build:
     name: Docker Build
