@@ -61,7 +61,7 @@ const DashboardPage: React.FC = () => {
   };
 
   const defaultStats = {
-    users: { total: 0, active: 0, newThisMonth: 0, growth: 0 },
+    users: { total: 0, active: 0, newThisMonth: 0, growth: 0, customers: 0, newCustomersThisMonth: 0, customerGrowth: 0 },
     orders: { total: 0, pending: 0, processing: 0, completed: 0, revenue: 0, growth: 0 },
     products: { total: 0, active: 0, lowStock: 0, outOfStock: 0 },
     reviews: { total: 0, pending: 0, averageRating: 0, growth: 0 },
@@ -89,10 +89,11 @@ const DashboardPage: React.FC = () => {
       conversionRate: 0, // TODO: Calculate when we have visitor tracking
     },
     customers: {
-      total: stats.users.total,
-      new: stats.users.newThisMonth,
-      returning: Math.max(0, stats.users.total - stats.users.newThisMonth),
-      growth: stats.users.growth,
+      // Use customer-specific stats (excluding admins)
+      total: stats.users.customers,
+      new: stats.users.newCustomersThisMonth,
+      returning: Math.max(0, stats.users.customers - stats.users.newCustomersThisMonth),
+      growth: stats.users.customerGrowth,
     },
   };
 
