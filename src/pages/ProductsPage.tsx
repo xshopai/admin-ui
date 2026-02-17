@@ -92,6 +92,7 @@ const ProductsPage: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductWithVariants | null>(null);
 
   // Form state
@@ -257,6 +258,11 @@ const ProductsPage: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
+  const handleReactivateProduct = (product: ProductWithVariants) => {
+    setSelectedProduct(product);
+    setIsReactivateModalOpen(true);
+  };
+
   const handleSaveProduct = async () => {
     if (!selectedProduct) return;
 
@@ -316,6 +322,20 @@ const ProductsPage: React.FC = () => {
       fetchProducts();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Failed to delete product');
+    }
+  };
+
+  const handleConfirmReactivate = async () => {
+    if (!selectedProduct) return;
+
+    try {
+      await productsApi.reactivate(selectedProduct.id);
+      setIsReactivateModalOpen(false);
+      // Invalidate dashboard stats to reflect reactivated product count
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      fetchProducts();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to reactivate product');
     }
   };
 
@@ -544,13 +564,25 @@ const ProductsPage: React.FC = () => {
                           >
                             <PencilIcon className="h-5 w-5" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                            title="Delete product"
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
+                          {product.status === 'inactive' ? (
+                            <button
+                              onClick={() => handleReactivateProduct(product)}
+                              className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                              title="Reactivate product"
+                            >
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleDeleteProduct(product)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                              title="Delete product"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -830,6 +862,24 @@ const ProductsPage: React.FC = () => {
             </button>
             <button onClick={handleConfirmDelete} className="btn bg-red-600 hover:bg-red-700 text-white">
               Delete Product
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Reactivate Confirmation Modal */}
+      <Modal isOpen={isReactivateModalOpen} onClose={() => setIsReactivateModalOpen(false)} title="Reactivate Product" size="sm">
+        <div className="space-y-4">
+          <p className="text-gray-600 dark:text-gray-400">
+            Are you sure you want to reactivate <strong>{selectedProduct?.name}</strong>? This will make the product visible to customers again.
+          </p>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button onClick={() => setIsReactivateModalOpen(false)} className="btn btn-secondary">
+              Cancel
+            </button>
+            <button onClick={handleConfirmReactivate} className="btn bg-green-600 hover:bg-green-700 text-white">
+              Reactivate Product
             </button>
           </div>
         </div>

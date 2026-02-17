@@ -260,6 +260,11 @@ export const productsApi = {
     return response.data;
   },
 
+  reactivate: async (id: string) => {
+    const response = await adminApiClient.patch<ApiResponse<any>>(`/api/admin/products/${id}/reactivate`);
+    return response.data;
+  },
+
   updateStatus: async (id: string, status: string) => {
     const response = await adminApiClient.patch<ApiResponse<any>>(`/api/admin/products/${id}/status`, { status });
     return response.data;
