@@ -421,13 +421,23 @@ const OrderDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {order.updatedAt !== order.createdAt && (
+              {order.status !== 'Created' && order.updatedAt !== order.createdAt && (
                 <div className="flex items-start space-x-3">
                   <div className="mt-1">
-                    <ClockIcon className="h-5 w-5 text-blue-500" />
+                    <CheckCircleIcon className="h-5 w-5 text-green-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Last Updated</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {order.status === 'Confirmed'
+                        ? 'Payment Confirmed'
+                        : order.status === 'Cancelled'
+                          ? 'Order Cancelled'
+                          : order.status === 'Shipped'
+                            ? 'Order Shipped'
+                            : order.status === 'Delivered'
+                              ? 'Order Delivered'
+                              : `Status: ${order.status}`}
+                    </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {new Date(order.updatedAt).toLocaleString()}
                     </p>

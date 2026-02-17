@@ -106,28 +106,67 @@ const InventoryPage: React.FC = () => {
       const productsResponse = await productsApi.getAll({});
       const products = Array.isArray(productsResponse.data) ? productsResponse.data : [];
 
-      // Transform to inventory items (mock data for now - replace with actual inventory API)
-      const inventoryItems: InventoryItem[] = products.map((product: any) => {
-        const currentStock = Math.floor(Math.random() * 200);
-        const minStock = 20;
-        const reorderPoint = 50;
+      // Collect all SKUs from products (including variant SKUs)
+      const skuToProductMap: Record<string, { name: string; sku: string; productId: string }> = {};
+
+      products.forEach((product: any) => {
+        const productId = product._id || product.id;
+        const productName = product.name;
+
+        // If product has variants, use variant SKUs
+        if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+          product.variants.forEach((variant: any) => {
+            if (variant.sku) {
+              skuToProductMap[variant.sku] = {
+                name: productName,
+                sku: variant.sku,
+                productId,
+              };
+            }
+          });
+        } else if (product.sku) {
+          // Use product SKU if no variants
+          skuToProductMap[product.sku] = {
+            name: productName,
+            sku: product.sku,
+            productId,
+          };
+        }
+      });
+
+      const allSkus = Object.keys(skuToProductMap);
+
+      // Fetch real inventory data from inventory-service
+      let inventoryData: Record<string, any> = {};
+      if (allSkus.length > 0) {
+        inventoryData = await inventoryApi.getBatch(allSkus);
+      }
+
+      // Transform to inventory items using real data
+      const inventoryItems: InventoryItem[] = allSkus.map((sku) => {
+        const productInfo = skuToProductMap[sku];
+        const inv = inventoryData[sku];
+
+        const currentStock = inv?.quantityAvailable ?? 0;
+        const reservedStock = inv?.quantityReserved ?? 0;
+        const reorderPoint = inv?.reorderPoint ?? 50;
 
         let status: 'in_stock' | 'low_stock' | 'out_of_stock' = 'in_stock';
         if (currentStock === 0) status = 'out_of_stock';
         else if (currentStock <= reorderPoint) status = 'low_stock';
 
         return {
-          id: product._id || product.id,
-          sku: product.sku,
-          productName: product.name,
-          currentStock,
-          availableStock: currentStock - Math.floor(Math.random() * 10),
-          reservedStock: Math.floor(Math.random() * 10),
-          minStockLevel: minStock,
+          id: productInfo.productId,
+          sku: sku,
+          productName: productInfo.name,
+          currentStock: currentStock + reservedStock,
+          availableStock: currentStock,
+          reservedStock: reservedStock,
+          minStockLevel: 10,
           maxStockLevel: 500,
-          reorderPoint,
+          reorderPoint: reorderPoint,
           status,
-          lastUpdated: product.updated_at || product.updatedAt || new Date().toISOString(),
+          lastUpdated: inv?.updatedAt || inv?.updated_at || new Date().toISOString(),
         };
       });
 

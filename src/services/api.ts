@@ -380,6 +380,38 @@ export const inventoryApi = {
     const response = await adminApiClient.get<ApiResponse<any[]>>(`/inventory/${id}/movements`);
     return response.data;
   },
+
+  /**
+   * Get inventory for multiple SKUs in batch
+   */
+  getBatch: async (
+    skus: string[],
+  ): Promise<Record<string, { sku: string; quantityAvailable: number; quantityReserved: number }>> => {
+    if (!skus || skus.length === 0) {
+      return {};
+    }
+    try {
+      const response = await bffApiClient.post<ApiResponse<any[]>>('/api/inventory/batch', { skus });
+      const inventoryArray = response.data.data || [];
+      // Convert array to map by SKU for easy lookup
+      const inventoryMap: Record<string, any> = {};
+      inventoryArray.forEach((item: any) => {
+        inventoryMap[item.sku] = item;
+      });
+      return inventoryMap;
+    } catch (error) {
+      console.error('Failed to fetch inventory batch:', error);
+      return {};
+    }
+  },
+
+  /**
+   * Get inventory for a single SKU
+   */
+  getBySku: async (sku: string) => {
+    const response = await bffApiClient.get<ApiResponse<any>>(`/api/inventory/${sku}`);
+    return response.data;
+  },
 };
 
 // Dashboard API functions

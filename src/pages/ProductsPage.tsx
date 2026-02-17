@@ -8,21 +8,44 @@ import {
   TrashIcon,
   PlusIcon,
   PhotoIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
-import { productsApi } from '../services/api';
+import { productsApi, inventoryApi } from '../services/api';
 import { Product } from '../types';
 import Modal from '../components/ui/Modal';
 import Badge from '../components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 
+// Extended product type with variants from backend
+interface ProductVariant {
+  sku: string;
+  color?: string;
+  size?: string;
+  initial_stock?: number;
+}
+
+interface ProductWithVariants extends Product {
+  variants?: ProductVariant[];
+}
+
+// Inventory data type
+interface InventoryData {
+  sku: string;
+  quantityAvailable: number;
+  quantityReserved: number;
+}
+
 // Product thumbnail component with fallback for broken images
-const ProductThumbnail: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => {
+const ProductThumbnail: React.FC<{ src?: string; alt: string; size?: 'sm' | 'md' }> = ({ src, alt, size = 'md' }) => {
   const [hasError, setHasError] = useState(false);
+  const sizeClasses = size === 'sm' ? 'h-8 w-8' : 'h-10 w-10';
+  const iconSize = size === 'sm' ? 'h-4 w-4' : 'h-6 w-6';
 
   if (!src || hasError) {
     return (
-      <div className="h-10 w-10 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-        <PhotoIcon className="h-6 w-6 text-gray-400" />
+      <div className={`${sizeClasses} rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center`}>
+        <PhotoIcon className={`${iconSize} text-gray-400`} />
       </div>
     );
   }
@@ -31,18 +54,28 @@ const ProductThumbnail: React.FC<{ src?: string; alt: string }> = ({ src, alt })
     <img
       src={src}
       alt={alt}
-      className="h-10 w-10 rounded object-cover"
+      className={`${sizeClasses} rounded object-cover`}
       loading="lazy"
       onError={() => setHasError(true)}
     />
   );
 };
 
+// Stock status badge component
+const StockBadge: React.FC<{ quantity: number }> = ({ quantity }) => {
+  if (quantity === 0) {
+    return <Badge variant="error">Out of Stock</Badge>;
+  } else if (quantity < 10) {
+    return <Badge variant="warning">Low ({quantity})</Badge>;
+  }
+  return <Badge variant="success">{quantity}</Badge>;
+};
+
 const ProductsPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithVariants[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductWithVariants[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -50,11 +83,16 @@ const ProductsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
 
+  // Expandable row states
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [loadingInventory, setLoadingInventory] = useState<Set<string>>(new Set());
+  const [inventoryCache, setInventoryCache] = useState<Record<string, InventoryData>>({});
+
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductWithVariants | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -123,8 +161,8 @@ const ProductsPage: React.FC = () => {
         name: product.name,
         description: product.description,
         price: product.price,
-        category: product.category,
-        subcategory: product.subcategory,
+        category: product.category || product.taxonomy?.category,
+        subcategory: product.subcategory || product.taxonomy?.subcategory,
         brand: product.brand,
         sku: product.sku,
         status: product.is_active ? ('active' as const) : ('inactive' as const),
@@ -134,6 +172,8 @@ const ProductsPage: React.FC = () => {
         createdAt: product.created_at,
         updatedAt: product.updated_at,
         createdBy: product.created_by,
+        // Include variants from backend
+        variants: product.variants || [],
       }));
 
       setProducts(transformedProducts);
@@ -146,15 +186,73 @@ const ProductsPage: React.FC = () => {
     }
   };
 
+  // Toggle expand/collapse for a product row
+  const toggleExpand = async (productId: string, variants: ProductVariant[]) => {
+    const newExpanded = new Set(expandedProducts);
+
+    if (newExpanded.has(productId)) {
+      // Collapse
+      newExpanded.delete(productId);
+    } else {
+      // Expand and fetch inventory if not cached
+      newExpanded.add(productId);
+
+      // Get SKUs that need inventory data
+      const skusToFetch = variants.filter((v) => v.sku && !inventoryCache[v.sku]).map((v) => v.sku);
+
+      if (skusToFetch.length > 0) {
+        setLoadingInventory((prev) => new Set([...Array.from(prev), productId]));
+
+        try {
+          const inventoryData = await inventoryApi.getBatch(skusToFetch);
+          setInventoryCache((prev) => ({ ...prev, ...inventoryData }));
+        } catch (err) {
+          console.error('Failed to fetch inventory:', err);
+        } finally {
+          setLoadingInventory((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(productId);
+            return newSet;
+          });
+        }
+      }
+    }
+
+    setExpandedProducts(newExpanded);
+  };
+
+  // Calculate total stock from variants
+  const getTotalStock = (variants: ProductVariant[]): number => {
+    if (!variants || variants.length === 0) return 0;
+    return variants.reduce((sum, variant) => {
+      const inv = inventoryCache[variant.sku];
+      return sum + (inv?.quantityAvailable || 0);
+    }, 0);
+  };
+
+  // Check if inventory is loaded for a product's variants
+  const hasInventoryLoaded = (variants: ProductVariant[]): boolean => {
+    if (!variants || variants.length === 0) return true;
+    return variants.every((v) => v.sku in inventoryCache);
+  };
+
+  // Format variant attributes for display
+  const formatVariantLabel = (variant: ProductVariant): string => {
+    const parts = [];
+    if (variant.color) parts.push(variant.color);
+    if (variant.size) parts.push(variant.size);
+    return parts.length > 0 ? parts.join(' / ') : variant.sku;
+  };
+
   const handleCreateProduct = () => {
     navigate('/products/add');
   };
 
-  const handleEditProduct = (product: Product) => {
+  const handleEditProduct = (product: ProductWithVariants) => {
     navigate(`/products/edit/${product.id}`);
   };
 
-  const handleDeleteProduct = (product: Product) => {
+  const handleDeleteProduct = (product: ProductWithVariants) => {
     setSelectedProduct(product);
     setIsDeleteModalOpen(true);
   };
@@ -341,14 +439,14 @@ const ProductsPage: React.FC = () => {
           </p>
         </div>
         <div className="card p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Low Stock</p>
-          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">
-            {products.filter((p) => p.stock < 10).length}
+          <p className="text-sm text-gray-500 dark:text-gray-400">With Variants</p>
+          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+            {products.filter((p) => p.variants && p.variants.length > 0).length}
           </p>
         </div>
         <div className="card p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Filtered Results</p>
-          <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{filteredProducts.length}</p>
+          <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">{filteredProducts.length}</p>
         </div>
       </div>
 
@@ -357,11 +455,12 @@ const ProductsPage: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">{null}</TableHead>
               <TableHead>Product</TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Stock</TableHead>
+              <TableHead>Variants / Stock</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -369,63 +468,169 @@ const ProductsPage: React.FC = () => {
           <TableBody>
             {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                   No products found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <ProductThumbnail src={product.images?.[0]} alt={product.name} />
-                      <div>
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                          {product.description}
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-xs">{product.sku}</span>
-                  </TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`${
-                        product.stock < 10
-                          ? 'text-red-600 dark:text-red-400 font-semibold'
-                          : 'text-gray-900 dark:text-gray-100'
-                      }`}
+              filteredProducts.map((product) => {
+                const hasVariants = product.variants && product.variants.length > 0;
+                const isExpanded = expandedProducts.has(product.id);
+                const isLoadingInv = loadingInventory.has(product.id);
+
+                return (
+                  <React.Fragment key={product.id}>
+                    {/* Main Product Row */}
+                    <TableRow
+                      className={hasVariants ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : ''}
+                      onClick={() => hasVariants && toggleExpand(product.id, product.variants || [])}
                     >
-                      {product.stock}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(product.status)}>{product.status}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => handleEditProduct(product)}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-                        title="Edit product"
-                      >
-                        <PencilIcon className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(product)}
-                        className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                        title="Delete product"
-                      >
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                      <TableCell className="w-10">
+                        {hasVariants && (
+                          <button
+                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpand(product.id, product.variants || []);
+                            }}
+                          >
+                            {isExpanded ? (
+                              <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <ChevronRightIcon className="h-4 w-4 text-gray-500" />
+                            )}
+                          </button>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <ProductThumbnail src={product.images?.[0]} alt={product.name} />
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                              {product.description}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="font-mono text-xs">{product.sku}</span>
+                      </TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        {hasVariants ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                              {product.variants!.length} variant{product.variants!.length !== 1 ? 's' : ''}
+                            </span>
+                            {isExpanded && hasInventoryLoaded(product.variants!) && (
+                              <span className="text-xs text-gray-500">(Total: {getTotalStock(product.variants!)})</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">No variants</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(product.status)}>{product.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => handleEditProduct(product)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                            title="Edit product"
+                          >
+                            <PencilIcon className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                            title="Delete product"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Expanded Variant Rows */}
+                    {isExpanded && hasVariants && (
+                      <>
+                        {isLoadingInv ? (
+                          <TableRow className="bg-gray-50 dark:bg-gray-800/50">
+                            <TableCell colSpan={8} className="py-4">
+                              <div className="flex items-center justify-center gap-2 text-gray-500">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                Loading inventory...
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          product.variants!.map((variant, index) => {
+                            const inv = inventoryCache[variant.sku];
+                            const stock = inv?.quantityAvailable || 0;
+                            const reserved = inv?.quantityReserved || 0;
+
+                            return (
+                              <TableRow
+                                key={`${product.id}-variant-${index}`}
+                                className="bg-gray-50 dark:bg-gray-800/50 border-l-4 border-l-blue-200 dark:border-l-blue-800"
+                              >
+                                <TableCell>{null}</TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-3 pl-4">
+                                    <div className="h-8 w-8 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs text-gray-500">
+                                      VAR
+                                    </div>
+                                    <div>
+                                      <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        {formatVariantLabel(variant)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-mono text-xs text-gray-600 dark:text-gray-400">
+                                    {variant.sku}
+                                  </span>
+                                </TableCell>
+                                <TableCell>—</TableCell>
+                                <TableCell>—</TableCell>
+                                <TableCell>
+                                  <div className="flex flex-col gap-1">
+                                    <StockBadge quantity={stock} />
+                                    {reserved > 0 && (
+                                      <span className="text-xs text-orange-600 dark:text-orange-400">
+                                        {reserved} reserved
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <span className={`text-xs ${stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {stock > 0 ? 'Available' : 'Unavailable'}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <a
+                                    href={`/inventory?sku=${encodeURIComponent(variant.sku)}`}
+                                    className="text-xs text-purple-600 hover:text-purple-800 dark:text-purple-400"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Manage Stock
+                                  </a>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })
+                        )}
+                      </>
+                    )}
+                  </React.Fragment>
+                );
+              })
             )}
           </TableBody>
         </Table>
