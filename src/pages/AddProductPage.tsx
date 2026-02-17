@@ -251,7 +251,7 @@ const AddProductPage: React.FC = () => {
     } catch (err: any) {
       console.error('Product creation error:', err);
       const errorMessage =
-        err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to create product';
+        err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to create product';
       setError(errorMessage);
     } finally {
       setLoading(false);

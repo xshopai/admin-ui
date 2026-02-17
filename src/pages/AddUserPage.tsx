@@ -117,7 +117,7 @@ const AddUserPage: React.FC = () => {
       // Navigate back to users page on success
       navigate('/users');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to create user');
+      setError(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to create user');
       console.error('Error creating user:', err);
     } finally {
       setLoading(false);

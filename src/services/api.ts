@@ -318,11 +318,18 @@ export const ordersApi = {
     return Promise.resolve({ success: true, data: null });
   },
 
-  updateTracking: async (id: string, trackingNumber: string, carrierName?: string) => {
-    // TODO: Implement tracking endpoint in Order Service
-    // For now, update via status endpoint
-    console.warn('Tracking endpoint not yet implemented in Order Service');
-    return Promise.resolve({ success: true, data: null });
+  getTracking: async (id: string) => {
+    const response = await adminApiClient.get<ApiResponse<any>>(`/api/admin/orders/${id}/tracking`);
+    return response.data;
+  },
+
+  updateTracking: async (id: string, carrierName: string, trackingNumber: string, estimatedDeliveryDate?: string) => {
+    const response = await adminApiClient.put<ApiResponse<any>>(`/api/admin/orders/${id}/tracking`, {
+      carrierName,
+      trackingNumber,
+      estimatedDeliveryDate,
+    });
+    return response.data;
   },
 
   delete: async (id: string) => {

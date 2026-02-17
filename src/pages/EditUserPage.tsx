@@ -133,7 +133,7 @@ const EditUserPage: React.FC = () => {
       // Navigate back to users page on success
       navigate('/users');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to update user');
+      setError(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update user');
       console.error('Error updating user:', err);
     } finally {
       setLoading(false);

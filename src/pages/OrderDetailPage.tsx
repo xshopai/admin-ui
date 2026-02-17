@@ -16,6 +16,15 @@ import {
 import { ordersApi } from '../services/api';
 import logger from '../utils/logger';
 
+// Timeline event interface matching backend TrackingEventDto
+interface TimelineEvent {
+  status: string;
+  description: string;
+  timestamp: string;
+  location?: string;
+  isCompleted: boolean;
+}
+
 const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -46,12 +55,21 @@ const OrderDetailPage: React.FC = () => {
     retry: false, // Don't retry if payment not found
   });
 
+  // Fetch tracking info with timeline
+  const { data: trackingData, isLoading: isLoadingTracking } = useQuery({
+    queryKey: ['order-tracking', id],
+    queryFn: () => ordersApi.getTracking(id!),
+    enabled: !!id,
+    retry: false,
+  });
+
   // Update order status mutation
   const updateStatusMutation = useMutation({
     mutationFn: ({ status, paymentStatus, shippingStatus }: any) =>
       ordersApi.updateStatus(id!, status, paymentStatus, shippingStatus),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', id] });
+      queryClient.invalidateQueries({ queryKey: ['order-tracking', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       logger.info('Order status updated successfully', { orderId: id });
     },
@@ -66,6 +84,7 @@ const OrderDetailPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', id] });
       queryClient.invalidateQueries({ queryKey: ['order-payment', id] });
+      queryClient.invalidateQueries({ queryKey: ['order-tracking', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       logger.info('Payment confirmed successfully', { orderId: id });
       alert('Payment confirmed! Order will advance to shipping preparation.');
@@ -82,6 +101,7 @@ const OrderDetailPage: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', id] });
       queryClient.invalidateQueries({ queryKey: ['order-payment', id] });
+      queryClient.invalidateQueries({ queryKey: ['order-tracking', id] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       setShowRejectModal(false);
       setRejectReason('');
@@ -408,43 +428,70 @@ const OrderDetailPage: React.FC = () => {
           {/* Order Timeline */}
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Order Timeline</h2>
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="mt-1">
-                  <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">Order Created</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {new Date(order.createdAt).toLocaleString()}
-                  </p>
-                </div>
+            {isLoadingTracking ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">Loading timeline...</div>
+            ) : trackingData?.data?.timeline && trackingData.data.timeline.length > 0 ? (
+              <div className="space-y-4">
+                {trackingData.data.timeline.map((event: TimelineEvent, index: number) => (
+                  <div key={index} className="flex items-start space-x-3">
+                    <div className="mt-1">
+                      {event.isCompleted ? (
+                        <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <ClockIcon className="h-5 w-5 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{event.status}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{event.description}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {new Date(event.timestamp).toLocaleString()}
+                      </p>
+                      {event.location && <p className="text-xs text-gray-500 dark:text-gray-400">{event.location}</p>}
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              {order.status !== 'Created' && order.updatedAt !== order.createdAt && (
+            ) : (
+              /* Fallback to basic timeline if tracking data not available */
+              <div className="space-y-4">
                 <div className="flex items-start space-x-3">
                   <div className="mt-1">
                     <CheckCircleIcon className="h-5 w-5 text-green-500" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {order.status === 'Confirmed'
-                        ? 'Payment Confirmed'
-                        : order.status === 'Cancelled'
-                          ? 'Order Cancelled'
-                          : order.status === 'Shipped'
-                            ? 'Order Shipped'
-                            : order.status === 'Delivered'
-                              ? 'Order Delivered'
-                              : `Status: ${order.status}`}
-                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Order Created</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(order.updatedAt).toLocaleString()}
+                      {new Date(order.createdAt).toLocaleString()}
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
+
+                {order.status !== 'Created' && order.updatedAt !== order.createdAt && (
+                  <div className="flex items-start space-x-3">
+                    <div className="mt-1">
+                      <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {order.status === 'Confirmed'
+                          ? 'Payment Confirmed'
+                          : order.status === 'Cancelled'
+                            ? 'Order Cancelled'
+                            : order.status === 'Shipped'
+                              ? 'Order Shipped'
+                              : order.status === 'Delivered'
+                                ? 'Order Delivered'
+                                : `Status: ${order.status}`}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(order.updatedAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Payment Information */}
