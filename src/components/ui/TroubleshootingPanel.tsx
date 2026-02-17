@@ -20,8 +20,8 @@ const TroubleshootingPanel: React.FC<TroubleshootingPanelProps> = ({
       checks: [
         {
           label: 'Web BFF Status',
-          command: 'Check if running on port 3100',
-          check: 'curl http://localhost:3100/health',
+          command: 'Check if running on port 8014',
+          check: 'curl http://localhost:8014/health/ready',
         },
         { label: 'Network Tab', command: 'Open browser DevTools → Network tab → Check failed requests', check: '' },
         { label: 'CORS Issues', command: 'Check browser console for CORS-related errors', check: '' },
@@ -43,7 +43,7 @@ const TroubleshootingPanel: React.FC<TroubleshootingPanelProps> = ({
         {
           label: 'Auth Service Status',
           command: 'Check if auth-service is running',
-          check: 'curl http://localhost:3001/health',
+          check: 'curl http://localhost:8004/health/ready',
         },
         { label: 'BFF Logs', command: 'Check Web BFF logs for connection errors', check: '' },
         { label: 'Service Dependencies', command: 'Verify all microservices are running', check: '' },
@@ -133,7 +133,7 @@ const TroubleshootingPanel: React.FC<TroubleshootingPanelProps> = ({
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Quick Links:</h4>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => window.open('http://localhost:3100/health', '_blank')}
+                onClick={() => window.open('http://localhost:8014/health/ready', '_blank')}
                 className="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded"
               >
                 Check BFF Health
@@ -141,7 +141,7 @@ const TroubleshootingPanel: React.FC<TroubleshootingPanelProps> = ({
               <button
                 onClick={() => {
                   console.log('%c🔍 Current Configuration:', 'color: #2563eb; font-weight: bold; font-size: 14px;');
-                  console.log('BFF URL:', process.env.REACT_APP_BFF_API_URL || 'http://localhost:3100');
+                  console.log('BFF URL:', process.env.REACT_APP_BFF_API_URL || 'http://localhost:8014');
                   console.log('Environment:', process.env.NODE_ENV);
                   console.log('Build Time:', new Date().toISOString());
                 }}
@@ -154,9 +154,9 @@ const TroubleshootingPanel: React.FC<TroubleshootingPanelProps> = ({
                   console.log('%c📋 Checking Services...', 'color: #7c3aed; font-weight: bold; font-size: 14px;');
 
                   const services = [
-                    { name: 'Web BFF', url: 'http://localhost:3100/health' },
-                    { name: 'Auth Service', url: 'http://localhost:3001/health' },
-                    { name: 'User Service', url: 'http://localhost:3002/health' },
+                    { name: 'Web BFF', url: 'http://localhost:8014/health/ready' },
+                    { name: 'Auth Service', url: 'http://localhost:8004/health/ready' },
+                    { name: 'User Service', url: 'http://localhost:8002/health/ready' },
                   ];
 
                   services.forEach(async (service) => {

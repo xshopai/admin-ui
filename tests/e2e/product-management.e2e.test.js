@@ -11,7 +11,7 @@ import { test, expect } from '@playwright/test';
  * 5. Search and filter products
  */
 
-const BASE_URL = process.env.ADMIN_UI_URL || 'http://localhost:3100';
+const BASE_URL = process.env.ADMIN_UI_URL || 'http://localhost:3001';
 
 test.describe('Product Management E2E', () => {
   test.beforeEach(async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe('Product Management E2E', () => {
 
     // Click create product button
     const createButton = page.locator(
-      '[data-testid="create-product"], button:has-text("Add Product"), button:has-text("New Product")'
+      '[data-testid="create-product"], button:has-text("Add Product"), button:has-text("New Product")',
     );
     await createButton.click();
 

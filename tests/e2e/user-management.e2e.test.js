@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
  * 6. Filter users by role/status
  */
 
-const BASE_URL = process.env.ADMIN_UI_URL || 'http://localhost:3100';
+const BASE_URL = process.env.ADMIN_UI_URL || 'http://localhost:3001';
 
 test.describe('User Management E2E', () => {
   test.beforeEach(async ({ page }) => {

@@ -44,8 +44,8 @@ npm install
 Create a `.env` file in the admin-ui root:
 
 ```env
-REACT_APP_API_URL=http://localhost:3001
-REACT_APP_ADMIN_API_URL=http://localhost:3010
+PORT=3001
+REACT_APP_BFF_URL=http://localhost:8014
 ```
 
 ### 3. Start Development Server

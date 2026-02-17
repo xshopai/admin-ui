@@ -12,8 +12,8 @@ import { test, expect } from '@playwright/test';
  * 6. Test logout functionality
  */
 
-const BASE_URL = process.env.ADMIN_UI_URL || 'http://localhost:3100';
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3001';
+const BASE_URL = process.env.ADMIN_UI_URL || 'http://localhost:3001';
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:8004';
 
 test.describe('Admin Login E2E', () => {
   test('should login with valid admin credentials', async ({ page }) => {
@@ -94,7 +94,7 @@ test.describe('Admin Login E2E', () => {
 
     // Click logout
     const logoutButton = page.locator(
-      '[data-testid="logout-button"], button:has-text("Logout"), button:has-text("Sign Out")'
+      '[data-testid="logout-button"], button:has-text("Logout"), button:has-text("Sign Out")',
     );
 
     if (await logoutButton.isVisible()) {

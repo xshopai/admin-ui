@@ -294,6 +294,24 @@ export const ordersApi = {
     return response.data;
   },
 
+  // Payment management (Admin-Driven Workflow)
+  getPayment: async (orderId: string) => {
+    const response = await adminApiClient.get<ApiResponse<any>>(`/api/admin/orders/${orderId}/payment`);
+    return response.data;
+  },
+
+  confirmPayment: async (orderId: string) => {
+    const response = await adminApiClient.post<ApiResponse<any>>(`/api/admin/orders/${orderId}/confirm-payment`);
+    return response.data;
+  },
+
+  rejectPayment: async (orderId: string, reason: string) => {
+    const response = await adminApiClient.post<ApiResponse<any>>(`/api/admin/orders/${orderId}/fail-payment`, {
+      reason,
+    });
+    return response.data;
+  },
+
   addNote: async (id: string, note: string) => {
     // TODO: Implement notes endpoint in Order Service
     console.warn('Notes endpoint not yet implemented in Order Service');

@@ -19,7 +19,7 @@ npm install
 Create a `.env.local` file:
 
 ```env
-REACT_APP_BFF_URL=http://localhost:3100
+REACT_APP_BFF_URL=http://localhost:8014
 REACT_APP_ENV=development
 ```
 
@@ -62,7 +62,7 @@ admin-ui/
 
 | Variable            | Description      | Default                 |
 | ------------------- | ---------------- | ----------------------- |
-| `REACT_APP_BFF_URL` | Web BFF API URL  | `http://localhost:3100` |
+| `REACT_APP_BFF_URL` | Web BFF API URL  | `http://localhost:8014` |
 | `REACT_APP_ENV`     | Environment name | `development`           |
 
 ## Connecting to Backend Services
