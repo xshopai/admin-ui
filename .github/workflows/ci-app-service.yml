@@ -68,11 +68,25 @@ jobs:
           CI: true
         continue-on-error: true
 
+      # Determine BFF URL based on environment
+      - name: Set BFF URL
+        run: |
+          ENV="${{ inputs.environment || 'dev' }}"
+          if [ "$ENV" = "prod" ]; then
+            SUFFIX="${{ vars.DEPLOY_SUFFIX_PROD }}"
+          else
+            SUFFIX="${{ vars.DEPLOY_SUFFIX_DEV || 'development' }}"
+          fi
+          BFF_URL="https://app-web-bff-${{ env.PROJECT_NAME }}-${SUFFIX}.azurewebsites.net"
+          echo "REACT_APP_BFF_URL=${BFF_URL}" >> "$GITHUB_ENV"
+          echo "BFF URL: ${BFF_URL}"
+
       - name: Build application
         run: npm run build
         env:
           CI: false
           GENERATE_SOURCEMAP: false
+          REACT_APP_BFF_URL: ${{ env.REACT_APP_BFF_URL }}
 
       - name: Create deployment package
         run: |
