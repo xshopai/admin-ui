@@ -23,6 +23,17 @@ on:
       - "package*.json"
 
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment"
+        required: true
+        type: choice
+        options: [dev, prod]
+        default: dev
+      suffix:
+        description: "Resource suffix (e.g. as01) — leave blank to use org default"
+        required: false
+        default: ""
 
 env:
   NODE_VERSION: "24"
