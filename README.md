@@ -1,124 +1,293 @@
-# xshopai Admin UI
+<div align="center">
 
-A modern React + TypeScript admin dashboard for managing the xshopai e-commerce platform. Built with the same design system and theme as the customer-ui for consistent user experience.
+# 🛠️ Admin UI
 
-## Features
+**React + TypeScript admin dashboard for managing the xshopai e-commerce platform**
 
-- 🔐 **Authentication & Authorization** - Secure admin login with JWT tokens
-- 📊 **Dashboard Overview** - Real-time stats and key metrics
-- 👥 **User Management** - Manage customers and admin users
-- 🛍️ **Product Management** - Create, edit, and manage products
-- 📦 **Inventory Control** - Track stock levels and movements
-- 🛒 **Order Management** - Process and track customer orders
-- ⭐ **Review Moderation** - Approve/reject customer reviews
-- 📈 **Analytics & Reports** - Comprehensive business insights
-- 🌙 **Dark Mode Support** - Toggle between light and dark themes
-- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
+[![React](https://img.shields.io/badge/React-18.2-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-3.x-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-## Technology Stack
+[Getting Started](#-getting-started) •
+[Documentation](#-documentation) •
+[Testing](#-testing) •
+[Contributing](#-contributing)
 
-- **Frontend**: React 18 + TypeScript
-- **State Management**: Redux Toolkit + Zustand
-- **Data Fetching**: TanStack Query (React Query)
-- **Styling**: Tailwind CSS
-- **Icons**: Heroicons
-- **Routing**: React Router v6
-- **Build Tool**: Create React App
+</div>
 
-## Installation & Setup
+---
+
+## 🎯 Overview
+
+The **Admin UI** is the back-office dashboard for the xshopai platform, giving administrators full control over users, products, inventory, orders, and reviews. Built with React, TypeScript, and TailwindCSS, it features data-rich tables (TanStack Table), charts (Recharts), and role-based access control. All API calls are routed through the [Web BFF](https://github.com/xshopai/web-bff).
+
+---
+
+## ✨ Key Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 📊 Dashboard & Analytics
+
+- Real-time summary stats and KPIs
+- Revenue and order trend charts (Recharts)
+- Growth indicators with color-coded trends
+- Recent activity feed and quick actions
+
+</td>
+<td width="50%">
+
+### 👥 User & Product Management
+
+- Full CRUD for customer and admin accounts
+- Product catalog creation and editing
+- Inventory stock level tracking
+- Order processing and fulfillment
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### ⭐ Review Moderation
+
+- Approve, reject, or flag customer reviews
+- Bulk moderation actions
+- Review analytics and sentiment
+- Content policy enforcement
+
+</td>
+<td width="50%">
+
+### 🎨 Modern UI/UX
+
+- TailwindCSS responsive design
+- Dark mode with system preference detection
+- Accessible HeadlessUI components
+- Mobile-friendly collapsible sidebar
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 16+ and npm
-- Running backend services (admin-service on port 3010)
+- Node.js 20+ (LTS)
+- npm 9+
+- Running backend services (Web BFF on port 8014)
 
-### 1. Install Dependencies
+### Quick Start with Docker
 
 ```bash
+# Clone the repository
+git clone https://github.com/xshopai/admin-ui.git
 cd admin-ui
+
+# Build and run
+docker build -t admin-ui .
+docker run -p 3001:80 admin-ui
+```
+
+### Local Development Setup
+
+<details>
+<summary><b>🔧 Development Server</b></summary>
+
+```bash
+# Install dependencies
 npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env — ensure REACT_APP_BFF_URL=http://localhost:8014
+
+# Start development server (hot reload)
+npm run dev
 ```
 
-### 2. Environment Configuration
+The app will be available at [http://localhost:3001](http://localhost:3001).
 
-Create a `.env` file in the admin-ui root:
+📖 See [Local Development Guide](docs/LOCAL_DEVELOPMENT.md) for detailed instructions.
 
-```env
-PORT=3001
-REACT_APP_BFF_URL=http://localhost:8014
-```
+</details>
 
-### 3. Start Development Server
+<details>
+<summary><b>🏗️ Production Build</b></summary>
 
 ```bash
-npm start
-```
-
-The admin UI will be available at `http://localhost:3000`
-
-### 4. Build for Production
-
-```bash
+# Create optimized production build
 npm run build
+
+# Serve with nginx (Docker)
+docker build -t admin-ui .
+docker run -p 3001:80 admin-ui
 ```
 
-## Key Features
+The Dockerfile uses multi-stage builds with nginx for production serving.
 
-### Dashboard Statistics
+</details>
 
-- Real-time metrics display with StatCard components
-- Growth indicators with color-coded trends
-- Quick action buttons for common tasks
-- Recent activity feeds
+---
 
-### Responsive Design
+## 📚 Documentation
 
-- Mobile-first approach with Tailwind responsive classes
-- Collapsible sidebar for mobile devices
-- Touch-friendly interface elements
-- Adaptive layout grids
+| Document                                          | Description                                        |
+| :------------------------------------------------ | :------------------------------------------------- |
+| 📘 [Local Development](docs/LOCAL_DEVELOPMENT.md) | Step-by-step local setup and development workflows |
+| ☁️ [Azure Container Apps](docs/ACA_DEPLOYMENT.md) | Deploy to Azure Container Apps                     |
 
-### Dark Mode
+---
 
-- System preference detection
-- Manual theme toggle
-- Persistent theme storage
-- Consistent dark variants across all components
+## 🧪 Testing
 
-### Admin Features
+```bash
+# Run unit tests
+npm test
 
-- **Users**: Manage customer and admin accounts
-- **Products**: Full CRUD operations for product catalog
-- **Inventory**: Track stock levels and movements
-- **Orders**: Process and fulfill customer orders
-- **Reviews**: Moderate and manage customer reviews
-- **Analytics**: Business insights and reporting
+# Lint code
+npm run lint
 
-## Authentication
+# Auto-fix lint issues
+npm run lint:fix
 
-The admin UI uses JWT token authentication:
+# Format code
+npm run format
+```
 
-- Login with admin credentials
-- Token stored in localStorage
-- Protected routes require valid authentication
-- Automatic logout on token expiration
+### Test Coverage
 
-## Backend Integration
+| Metric     | Status                   |
+| :--------- | :----------------------- |
+| Unit Tests | ✅ React Testing Library |
+| Linting    | ✅ ESLint                |
+| Formatting | ✅ Prettier              |
 
-Connects to these services:
+---
 
-- **Admin Service** (port 3010): Main admin operations
-- **Auth Service** (port 3001): Authentication
-- **User/Product/Order Services**: Various backend APIs
+## 🏗️ Project Structure
 
-## Demo Credentials
+```
+admin-ui/
+├── 📁 src/                       # Application source code
+│   ├── 📁 components/            # Reusable UI components
+│   ├── 📁 contexts/              # React context providers
+│   ├── 📁 pages/                 # Page-level components (routes)
+│   ├── 📁 services/              # API client layer
+│   ├── 📁 store/                 # Redux Toolkit + Zustand stores
+│   ├── 📁 telemetry/             # Azure Application Insights
+│   ├── 📁 types/                 # TypeScript type definitions
+│   └── 📁 utils/                 # Helper functions
+├── 📁 public/                    # Static assets
+├── 📁 tests/                     # Test suite
+├── 📁 scripts/                   # Build and utility scripts
+├── 📁 docs/                      # Documentation
+├── 📄 Dockerfile                 # Multi-stage build (nginx)
+├── 📄 nginx.conf                 # Production nginx configuration
+├── 📄 config-overrides.js        # CRA config overrides
+└── 📄 package.json               # Dependencies and scripts
+```
 
-For testing purposes, use any of these admin accounts:
+---
 
-- **Alex Support**: `alex.support@example.com` / `SupportPass654!`
-- **Emma Vendor**: `emma.vendor@example.com` / `VendorPass321!`
+## 🔧 Technology Stack
 
-## License
+| Category         | Technology                                     |
+| :--------------- | :--------------------------------------------- |
+| ⚛️ Framework     | React 18.2 + TypeScript                        |
+| 🎨 Styling       | TailwindCSS + HeadlessUI components            |
+| 📦 State         | Redux Toolkit + Zustand + TanStack React Query |
+| 📊 Charts        | Recharts for analytics dashboards              |
+| 📋 Tables        | TanStack Table for data-rich management views  |
+| 🌐 HTTP Client   | Axios (all requests via Web BFF)               |
+| 📊 Observability | Azure Application Insights                     |
+| 🐳 Deployment    | Docker multi-stage build with nginx            |
 
-This project is part of the xshopai platform.
-xshopai Web UI for admin users
+---
+
+## ⚡ Quick Reference
+
+```bash
+# 🚀 Development
+npm start                         # Start dev server (port 3001)
+npm run dev                       # Alias for start
+npm run build                     # Production build
+
+# 🧪 Testing
+npm test                          # Unit tests
+
+# 🔍 Code Quality
+npm run lint                      # ESLint check
+npm run lint:fix                  # Auto-fix lint issues
+npm run format                    # Prettier format
+
+# 🐳 Docker
+docker build -t admin-ui .
+docker run -p 3001:80 admin-ui
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. **Fork** the repository
+2. **Create** a feature branch
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Write** tests for your changes
+4. **Run** the test suite
+   ```bash
+   npm test && npm run lint
+   ```
+5. **Commit** your changes
+   ```bash
+   git commit -m 'feat: add amazing feature'
+   ```
+6. **Push** to your branch
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+7. **Open** a Pull Request
+
+Please ensure your PR:
+
+- ✅ Passes all existing tests
+- ✅ Includes tests for new functionality
+- ✅ Follows the existing code style
+- ✅ Updates documentation as needed
+
+---
+
+## 🆘 Support
+
+| Resource         | Link                                                                  |
+| :--------------- | :-------------------------------------------------------------------- |
+| 🐛 Bug Reports   | [GitHub Issues](https://github.com/xshopai/admin-ui/issues)           |
+| 📖 Documentation | [docs/](docs/)                                                        |
+| 💬 Discussions   | [GitHub Discussions](https://github.com/xshopai/admin-ui/discussions) |
+
+---
+
+## 📄 License
+
+This project is part of the **xshopai** e-commerce platform.
+Licensed under the MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**[⬆ Back to Top](#-admin-ui)**
+
+Made with ❤️ by the xshopai team
+
+</div>
