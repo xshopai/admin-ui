@@ -14,7 +14,12 @@ import {
   mockSingleProduct,
   mockDashboardStats,
   mockAdminOrders,
+  mockSingleOrder,
   mockAdminReviews,
+  mockReviewStats,
+  mockInventoryList,
+  mockAdminReturns,
+  mockReturnStats,
 } from './mock-data.js';
 
 /**
@@ -108,16 +113,63 @@ export async function setupApiMocks(page, options = {}) {
     if (/^\/api\/admin\/products\/[\w-]+$/.test(path) && method === 'DELETE') return json({ success: true });
 
     // ── Orders (admin) ──────────────────────────────────────────────────
+    if (/^\/api\/admin\/orders\/[\w-]+\/status$/.test(path) && method === 'PUT')
+      return json({ success: true, data: mockSingleOrder.data });
+    if (/^\/api\/admin\/orders\/[\w-]+\/tracking$/.test(path) && (method === 'PUT' || method === 'GET'))
+      return json({ success: true, data: mockSingleOrder.data });
+    if (/^\/api\/admin\/orders\/[\w-]+\/payment$/.test(path) && method === 'GET')
+      return json({ success: true, data: { status: 'Captured' } });
+    if (path === '/api/admin/orders/paged' && method === 'GET') return json(mockAdminOrders);
+    if (/^\/api\/admin\/orders\/[\w-]+$/.test(path) && method === 'GET') return json(mockSingleOrder);
+    if (/^\/api\/admin\/orders\/[\w-]+$/.test(path) && method === 'DELETE') return json({ success: true });
     if (/^\/api\/admin\/orders/.test(path) && method === 'GET') return json(mockAdminOrders);
 
     // ── Reviews (admin) ─────────────────────────────────────────────────
+    if (path === '/api/admin/reviews/stats' && method === 'GET') return json(mockReviewStats);
+    if (/^\/api\/admin\/reviews\/[\w-]+$/.test(path) && method === 'PATCH')
+      return json({ success: true, data: mockAdminReviews.data[0] });
+    if (/^\/api\/admin\/reviews\/[\w-]+$/.test(path) && method === 'DELETE') return json({ success: true });
     if (/^\/api\/admin\/reviews/.test(path) && method === 'GET') return json(mockAdminReviews);
 
     // ── Returns (admin) ─────────────────────────────────────────────────
+    if (path === '/api/admin/returns/stats' && method === 'GET') return json(mockReturnStats);
+    if (/^\/api\/admin\/returns\/paged/.test(path) && method === 'GET') return json(mockAdminReturns);
     if (/^\/api\/admin\/returns/.test(path) && method === 'GET')
       return json({ success: true, data: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 1 } });
 
     // ── Fallback ────────────────────────────────────────────────────────
+    return json({ success: true, data: {} });
+  });
+
+  // Inventory routes use /inventory (no /api prefix) — only intercept XHR/fetch, not page navigation
+  await page.route('**/inventory/**', async (route) => {
+    if (route.request().resourceType() === 'document') return route.continue();
+
+    const url = new URL(route.request().url());
+    const path = url.pathname;
+    const method = route.request().method();
+
+    const json = (body, status = 200) =>
+      route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+
+    if (/\/inventory\/[\w-]+\/movements$/.test(path) && method === 'GET')
+      return json({ success: true, data: [] });
+    if (/\/inventory\/[\w-]+\/stock$/.test(path) && method === 'PATCH')
+      return json({ success: true, data: mockInventoryList.data[0] });
+    if (/\/inventory\/[\w-]+$/.test(path) && method === 'GET')
+      return json({ success: true, data: mockInventoryList.data[0] });
+
+    return json(mockInventoryList);
+  });
+
+  await page.route('**/inventory', async (route) => {
+    if (route.request().resourceType() === 'document') return route.continue();
+
+    const method = route.request().method();
+    const json = (body, status = 200) =>
+      route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+
+    if (method === 'GET') return json(mockInventoryList);
     return json({ success: true, data: {} });
   });
 }
