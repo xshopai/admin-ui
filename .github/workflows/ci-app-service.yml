@@ -13,6 +13,8 @@ on:
       - "src/**"
       - "public/**"
       - "package*.json"
+      - "tests/e2e/**"
+      - "playwright.config.js"
       - ".github/workflows/ci-app-service.yml"
 
   pull_request:
@@ -21,6 +23,8 @@ on:
       - "src/**"
       - "public/**"
       - "package*.json"
+      - "tests/e2e/**"
+      - "playwright.config.js"
 
   workflow_dispatch:
     inputs:
@@ -41,8 +45,8 @@ env:
   PROJECT_NAME: xshopai
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  test:
+    name: Lint & Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -60,13 +64,72 @@ jobs:
 
       - name: Run linting
         run: npm run lint --if-present
-        continue-on-error: true
 
       - name: Run unit tests
         run: npm test -- --coverage --watchAll=false --passWithNoTests
         env:
           CI: true
-        continue-on-error: true
+
+      - name: Verify build
+        run: npm run build
+        env:
+          CI: false
+          GENERATE_SOURCEMAP: false
+
+  playwright:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  build:
+    name: Build & Package
+    runs-on: ubuntu-latest
+    needs: [test, playwright]
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
 
       # Determine BFF URL based on environment
       - name: Set BFF URL
@@ -92,7 +155,6 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r build/* deploy/
-          cp package.json deploy/
           echo '{"scripts":{"start":"npx serve -s . -l 8080"}}' > deploy/package.json
 
       - name: Upload artifact
@@ -105,7 +167,7 @@ jobs:
   deploy:
     name: Deploy (${{ inputs.environment || 'dev' }})
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: [build]
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'workflow_dispatch'
@@ -162,7 +224,7 @@ jobs:
 
           echo "Deploying **${{ env.SERVICE_NAME }}** → \`${APP_NAME}\`"
 
-      - name: Create deployment package
+      - name: Create deployment zip
         run: |
           cd ./deploy
           zip -r ../deploy.zip . -q
