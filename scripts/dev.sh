@@ -8,10 +8,12 @@ echo ""
 echo "Note: Make sure web-bff is running at http://localhost:8014"
 echo ""
 
-# Copy .env.example to .env for local development
+# Copy .env.example to .env only if .env does not already exist.
+# In Codespaces, 03-env.sh pre-patches .env with the correct forwarded URLs
+# (REACT_APP_BFF_URL, WDS_SOCKET_PORT) — overwriting it here would break the UI.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_DIR="$(dirname "$SCRIPT_DIR")"
-if [ -f "$SERVICE_DIR/.env.example" ]; then
+if [ ! -f "$SERVICE_DIR/.env" ] && [ -f "$SERVICE_DIR/.env.example" ]; then
     cp "$SERVICE_DIR/.env.example" "$SERVICE_DIR/.env"
     echo "✅ Copied .env.example → .env"
 fi
