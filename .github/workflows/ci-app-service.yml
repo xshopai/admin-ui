@@ -80,6 +80,7 @@ jobs:
     name: Playwright E2E (Azure)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: dev
     permissions:
       id-token: write
       contents: read
