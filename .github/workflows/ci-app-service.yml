@@ -109,23 +109,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # azure/login sets up the AZ CLI session but does NOT set the env vars
-      # that @azure/identity's DefaultAzureCredential needs. The reporter
-      # uploads test results to blob storage and requires a valid credential.
-      # We request a fresh GitHub OIDC token and write it to a file so that
-      # WorkloadIdentityCredential (part of DefaultAzureCredential) picks it up.
-      - name: Set up Azure identity env vars for @azure/identity
-        if: vars.PLAYWRIGHT_SERVICE_URL != ''
-        run: |
-          TOKEN=$(curl -sS \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" \
-            | jq -r '.value')
-          echo "$TOKEN" > "$RUNNER_TEMP/oidc-token"
-          echo "AZURE_FEDERATED_TOKEN_FILE=$RUNNER_TEMP/oidc-token" >> "$GITHUB_ENV"
-          echo "AZURE_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}" >> "$GITHUB_ENV"
-          echo "AZURE_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> "$GITHUB_ENV"
-
       - name: Run Playwright tests (Azure Playwright Testing)
         if: vars.PLAYWRIGHT_SERVICE_URL != ''
         run: npx playwright test --config=playwright.service.config.js
