@@ -77,13 +77,9 @@ jobs:
           GENERATE_SOURCEMAP: false
 
   playwright:
-    name: Playwright E2E (Azure)
+    name: Playwright E2E
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: dev
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - name: Checkout code
@@ -101,23 +97,9 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
-      - name: Azure login (OIDC)
-        if: vars.PLAYWRIGHT_SERVICE_URL != ''
-        uses: azure/login@v2.3.0
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Run Playwright tests (Azure Playwright Testing)
-        if: vars.PLAYWRIGHT_SERVICE_URL != ''
-        run: npx playwright test --config=playwright.service.config.js
-        env:
-          CI: true
-          PLAYWRIGHT_SERVICE_URL: ${{ vars.PLAYWRIGHT_SERVICE_URL }}
-
-      - name: Run Playwright tests (local fallback)
-        if: vars.PLAYWRIGHT_SERVICE_URL == ''
+      # Azure Playwright Testing service retired March 2026.
+      # Tests run locally — all API calls are mocked via page.route().
+      - name: Run Playwright tests
         run: npx playwright test
         env:
           CI: true
