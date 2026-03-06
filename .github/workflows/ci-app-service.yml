@@ -100,7 +100,7 @@ jobs:
       # Azure Playwright Testing service retired March 2026.
       # Tests run locally — all API calls are mocked via page.route().
       - name: Run Playwright tests
-        run: npx playwright test
+        run: npx playwright test --reporter=list,github
         env:
           CI: true
 
